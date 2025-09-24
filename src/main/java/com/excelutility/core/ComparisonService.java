@@ -260,7 +260,7 @@ public class ComparisonService {
             return true; // An empty filter group matches everything.
         }
 
-        if (group.getOperator() == FilterGroup.LogicalOperator.AND) {
+        if (group.getOperator() == FilteringService.LogicalOperator.AND) {
             return allResults.stream().allMatch(b -> b);
         } else { // OR
             return allResults.stream().anyMatch(b -> b);

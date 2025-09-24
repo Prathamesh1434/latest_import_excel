@@ -370,20 +370,8 @@ public class ComparePanel extends JPanel {
     }
 
     private void updateGuiFromProfile(ComparisonProfile loadedProfile) {
-        sourceFilePanel.setFilePath(loadedProfile.getSourceFilePath());
-        targetFilePanel.setFilePath(loadedProfile.getTargetFilePath());
-
-        SwingUtilities.invokeLater(() -> {
-            sourceFilePanel.setSelectedSheet(loadedProfile.getSourceSheetName());
-            targetFilePanel.setSelectedSheet(loadedProfile.getTargetSheetName());
-
-            if (loadedProfile.getSourceSheetName() != null) {
-                loadHeaders(true);
-            }
-            if (loadedProfile.getTargetSheetName() != null) {
-                loadHeaders(false);
-            }
-
+        // Use a callback to sequence the loading process
+        Runnable afterTargetLoad = () -> {
             if (this.sourceHeaders != null && this.targetHeaders != null &&
                 loadedProfile.getColumnMappings() != null && loadedProfile.getKeyColumns() != null) {
                 columnMappingPanel.setMappings(loadedProfile.getColumnMappings(), loadedProfile.getKeyColumns());
@@ -391,19 +379,38 @@ public class ComparePanel extends JPanel {
             if (loadedProfile.getIgnoredColumns() != null) {
                 columnMappingPanel.setIgnoredColumns(loadedProfile.getIgnoredColumns());
             }
+        };
+
+        Runnable afterSourceLoad = () -> {
+            sourceFilePanel.setSelectedSheet(loadedProfile.getSourceSheetName());
             if(loadedProfile.getSourceHeaderRows() != null) {
                 sourceFilePanel.setHeaderRowIndices(loadedProfile.getSourceHeaderRows());
-            }
-            if(loadedProfile.getTargetHeaderRows() != null) {
-                targetFilePanel.setHeaderRowIndices(loadedProfile.getTargetHeaderRows());
             }
             if(loadedProfile.getSourceConcatenationMode() != null) {
                 sourceFilePanel.setConcatenationMode(loadedProfile.getSourceConcatenationMode());
             }
-            if(loadedProfile.getTargetConcatenationMode() != null) {
-                targetFilePanel.setConcatenationMode(loadedProfile.getTargetConcatenationMode());
+            if (loadedProfile.getSourceSheetName() != null) {
+                loadHeaders(true);
             }
-        });
+
+            // Now load the target file and its dependent settings
+            targetFilePanel.setFilePath(loadedProfile.getTargetFilePath(), () -> {
+                targetFilePanel.setSelectedSheet(loadedProfile.getTargetSheetName());
+                if(loadedProfile.getTargetHeaderRows() != null) {
+                    targetFilePanel.setHeaderRowIndices(loadedProfile.getTargetHeaderRows());
+                }
+                if(loadedProfile.getTargetConcatenationMode() != null) {
+                    targetFilePanel.setConcatenationMode(loadedProfile.getTargetConcatenationMode());
+                }
+                if (loadedProfile.getTargetSheetName() != null) {
+                    loadHeaders(false);
+                }
+                SwingUtilities.invokeLater(afterTargetLoad);
+            });
+        };
+
+        // Start the chain by loading the source file
+        sourceFilePanel.setFilePath(loadedProfile.getSourceFilePath(), afterSourceLoad);
     }
 
     private void autoSuggestKeys(boolean isSource) {

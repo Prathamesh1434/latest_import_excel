@@ -132,12 +132,15 @@ public class FileConfigPanel extends JPanel {
         if (chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
             this.selectedFile = chooser.getSelectedFile();
             fileField.setText(selectedFile.getAbsolutePath());
-            populateSheetCombo();
+            populateSheetCombo(null);
         }
     }
 
-    private void populateSheetCombo() {
-        if (selectedFile == null) return;
+    private void populateSheetCombo(Runnable onComplete) {
+        if (selectedFile == null) {
+            if (onComplete != null) onComplete.run();
+            return;
+        }
 
         sheetCombo.removeAllItems();
         sheetCombo.addItem("Loading sheets...");
@@ -147,28 +150,20 @@ public class FileConfigPanel extends JPanel {
         SwingWorker<List<String>, Void> worker = new SwingWorker<List<String>, Void>() {
             @Override
             protected List<String> doInBackground() throws Exception {
-                System.out.println("SheetLoader: Starting background task.");
-                String filePath = selectedFile.getAbsolutePath();
-                System.out.println("SheetLoader: Reading file: " + filePath);
-                List<String> sheetNames = ExcelReader.getSheetNames(filePath);
-                System.out.println("SheetLoader: Found " + sheetNames.size() + " sheets.");
-                return sheetNames;
+                return ExcelReader.getSheetNames(selectedFile.getAbsolutePath());
             }
 
             @Override
             protected void done() {
-                System.out.println("SheetLoader: Background task finished. Updating UI.");
                 sheetCombo.setEnabled(true);
                 setCursor(Cursor.getDefaultCursor());
-                sheetCombo.removeAllItems(); // Clear "Loading..." message
+                sheetCombo.removeAllItems();
 
                 try {
                     List<String> sheetNames = get();
                     if (sheetNames.isEmpty()) {
-                        System.out.println("SheetLoader: No sheets found or loaded.");
                         sheetCombo.addItem("No sheets found in file");
                     } else {
-                        System.out.println("SheetLoader: Populating dropdown with " + sheetNames.size() + " sheets.");
                         for (String name : sheetNames) {
                             sheetCombo.addItem(name);
                         }
@@ -176,13 +171,15 @@ public class FileConfigPanel extends JPanel {
                         loadHeadersForFilter();
                     }
                 } catch (Exception e) {
-                    System.err.println("SheetLoader: Error getting sheets from background task.");
-                    e.printStackTrace();
                     sheetCombo.addItem("Error loading sheets!");
                     String errorMessage = "An error occurred while reading the Excel file:\n" +
                             e.getClass().getSimpleName() + ": " + e.getMessage() + "\n\n" +
                             "Please ensure the file is a valid, unencrypted Excel file and that you have permission to read it.";
                     JOptionPane.showMessageDialog(parent, errorMessage, "Error Reading File", JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    if (onComplete != null) {
+                        SwingUtilities.invokeLater(onComplete);
+                    }
                 }
             }
         };
@@ -251,14 +248,21 @@ public class FileConfigPanel extends JPanel {
     public String getFilePath() { return fileField.getText(); }
     public String getSelectedSheet() { return sheetCombo.getSelectedItem() != null ? sheetCombo.getSelectedItem().toString() : null; }
     public void setFilePath(String path) {
+        setFilePath(path, null);
+    }
+
+    public void setFilePath(String path, Runnable onSheetsLoaded) {
         if (path != null && !path.isEmpty()) {
             this.selectedFile = new File(path);
             fileField.setText(path);
-            populateSheetCombo();
+            populateSheetCombo(onSheetsLoaded);
         } else {
             this.selectedFile = null;
             fileField.setText("");
             sheetCombo.removeAllItems();
+            if (onSheetsLoaded != null) {
+                onSheetsLoaded.run();
+            }
         }
     }
     public void setSelectedSheet(String sheetName) { sheetCombo.setSelectedItem(sheetName); }

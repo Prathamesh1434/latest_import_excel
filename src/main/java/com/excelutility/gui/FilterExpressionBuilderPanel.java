@@ -62,7 +62,8 @@ public class FilterExpressionBuilderPanel extends JPanel {
 
         com.excelutility.core.GroupState rootGroupState = state.getGroups().get(0);
         rootGroup.setName(rootGroupState.getName());
-        buildGroupPanelFromState(rootGroup, rootGroupState, rootGroupState.getOperator());
+        // The root's operator is not used in the same way, but we pass the list for consistency.
+        buildGroupPanelFromState(rootGroup, rootGroupState, rootGroupState.getOperators().isEmpty() ? com.excelutility.core.FilteringService.LogicalOperator.AND : rootGroupState.getOperators().get(0));
 
         rootGroup.revalidate();
         rootGroup.repaint();
@@ -70,20 +71,19 @@ public class FilterExpressionBuilderPanel extends JPanel {
 
     private void buildGroupPanelFromState(LogicalGroupPanel parentPanel, com.excelutility.core.GroupState groupState, com.excelutility.core.FilteringService.LogicalOperator op) {
         if (groupState.getRules() != null) {
-            for (com.excelutility.core.RuleState ruleState : groupState.getRules()) {
+            for (int i = 0; i < groupState.getRules().size(); i++) {
+                com.excelutility.core.RuleState ruleState = groupState.getRules().get(i);
                 addRuleToGroup(parentPanel, ruleState.toFilterRule(), ruleState.getName());
-            }
-        }
-
-        // Apply the single operator from the saved state to all infix panels
-        for (Component comp : parentPanel.getContentPanel().getComponents()) {
-            if (comp instanceof LogicalGroupPanel.InfixOperatorPanel) {
-                ((LogicalGroupPanel.InfixOperatorPanel) comp).setOperator(op);
+                if (i < groupState.getRules().size() - 1) {
+                    // This is where you would set the operator between rules if your UI supported it.
+                    // For now, we assume the group's operator applies to all.
+                }
             }
         }
 
         if (groupState.getGroups() != null) {
-            for (com.excelutility.core.GroupState subGroupState : groupState.getGroups()) {
+            for (int i = 0; i < groupState.getGroups().size(); i++) {
+                com.excelutility.core.GroupState subGroupState = groupState.getGroups().get(i);
                 ActionListener deleteListener = event -> {
                     LogicalGroupPanel sourceGroup = (LogicalGroupPanel) event.getSource();
                     parentPanel.removeComponent(sourceGroup);
@@ -92,8 +92,20 @@ public class FilterExpressionBuilderPanel extends JPanel {
                     }
                 };
                 LogicalGroupPanel newGroupPanel = new LogicalGroupPanel(subGroupState.getName(), deleteListener);
-                buildGroupPanelFromState(newGroupPanel, subGroupState, subGroupState.getOperator());
+                buildGroupPanelFromState(newGroupPanel, subGroupState, subGroupState.getOperators().isEmpty() ? com.excelutility.core.FilteringService.LogicalOperator.AND : subGroupState.getOperators().get(0));
                 parentPanel.addComponent(newGroupPanel);
+            }
+        }
+
+        // Restore operators between all components
+        java.util.List<Component> components = java.util.Arrays.asList(parentPanel.getContentPanel().getComponents());
+        int opIndex = 0;
+        for (Component comp : components) {
+            if (comp instanceof LogicalGroupPanel.InfixOperatorPanel) {
+                if (opIndex < groupState.getOperators().size()) {
+                    ((LogicalGroupPanel.InfixOperatorPanel) comp).setOperator(groupState.getOperators().get(opIndex));
+                    opIndex++;
+                }
             }
         }
     }
@@ -106,8 +118,7 @@ public class FilterExpressionBuilderPanel extends JPanel {
     private com.excelutility.core.GroupState createGroupStateFromPanel(LogicalGroupPanel groupPanel) {
         java.util.List<com.excelutility.core.RuleState> ruleStates = new java.util.ArrayList<>();
         java.util.List<com.excelutility.core.GroupState> groupStates = new java.util.ArrayList<>();
-        com.excelutility.core.FilteringService.LogicalOperator firstOperator = com.excelutility.core.FilteringService.LogicalOperator.AND;
-        boolean operatorFound = false;
+        java.util.List<com.excelutility.core.FilteringService.LogicalOperator> operators = new java.util.ArrayList<>();
 
         for (Component comp : groupPanel.getContentPanel().getComponents()) {
             if (comp instanceof FilterRulePanel) {
@@ -116,11 +127,10 @@ public class FilterExpressionBuilderPanel extends JPanel {
                 ruleStates.add(new com.excelutility.core.RuleState(rulePanel.getName(), rule.getSourceType(), rule.getSourceValue(), rule.getTargetColumn(), rule.isTrimWhitespace()));
             } else if (comp instanceof LogicalGroupPanel) {
                 groupStates.add(createGroupStateFromPanel((LogicalGroupPanel) comp));
-            } else if (comp instanceof LogicalGroupPanel.InfixOperatorPanel && !operatorFound) {
-                firstOperator = ((LogicalGroupPanel.InfixOperatorPanel) comp).getOperator();
-                operatorFound = true;
+            } else if (comp instanceof LogicalGroupPanel.InfixOperatorPanel) {
+                operators.add(((LogicalGroupPanel.InfixOperatorPanel) comp).getOperator());
             }
         }
-        return new com.excelutility.core.GroupState(groupPanel.getName(), firstOperator, ruleStates, groupStates);
+        return new com.excelutility.core.GroupState(groupPanel.getName(), operators, ruleStates, groupStates);
     }
 }

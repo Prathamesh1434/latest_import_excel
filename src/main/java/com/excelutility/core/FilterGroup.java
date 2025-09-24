@@ -8,18 +8,13 @@ import java.util.List;
  */
 public class FilterGroup {
 
-    public enum LogicalOperator {
-        AND,
-        OR
-    }
-
-    private LogicalOperator operator = LogicalOperator.AND;
+    private FilteringService.LogicalOperator operator = FilteringService.LogicalOperator.AND;
     private final List<FilterCondition> conditions = new ArrayList<>();
     private final List<FilterGroup> groups = new ArrayList<>();
 
     // Getters and Setters
-    public LogicalOperator getOperator() { return operator; }
-    public void setOperator(LogicalOperator operator) { this.operator = operator; }
+    public FilteringService.LogicalOperator getOperator() { return operator; }
+    public void setOperator(FilteringService.LogicalOperator operator) { this.operator = operator; }
     public List<FilterCondition> getConditions() { return conditions; }
     public List<FilterGroup> getGroups() { return groups; }
 

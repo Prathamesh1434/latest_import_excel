@@ -19,11 +19,11 @@ public class ProfileSerializationTest {
         List<RuleState> group1Rules = new ArrayList<>();
         group1Rules.add(rule1);
 
-        GroupState group1 = new GroupState("Group 1", FilteringService.LogicalOperator.AND, group1Rules, new ArrayList<>());
+        GroupState group1 = new GroupState("Group 1", java.util.Arrays.asList(FilteringService.LogicalOperator.AND), group1Rules, new ArrayList<>());
 
         List<RuleState> group2Rules = new ArrayList<>();
         group2Rules.add(rule2);
-        GroupState group2 = new GroupState("Group 2", FilteringService.LogicalOperator.OR, group2Rules, new ArrayList<>());
+        GroupState group2 = new GroupState("Group 2", java.util.Arrays.asList(FilteringService.LogicalOperator.OR), group2Rules, new ArrayList<>());
 
         List<GroupState> rootGroups = new ArrayList<>();
         rootGroups.add(group1);
