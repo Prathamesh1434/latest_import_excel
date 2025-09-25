@@ -537,27 +537,25 @@ public class FilterPanel extends JPanel {
         dialog.setVisible(true);
     }
 
-    private FilterProfile createProfileFromUI(String profileName) {
-        FilterBuilderState builderState = filterExpressionBuilderPanel.getState();
-
-        return new FilterProfile(
-            profileName,
-            new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new java.util.Date()),
-            dataFilePanel.getFilePath(),
-            dataFilePanel.getSelectedSheet(),
-            filterValuesFilePanel.getFilePath(),
-            filterValuesFilePanel.getSelectedSheet(),
-            builderState,
-            dataFilePanel.getHeaderRowIndices(),
-            dataFilePanel.getConcatenationMode(),
-            filterValuesFilePanel.getHeaderRowIndices(),
-            filterValuesFilePanel.getConcatenationMode()
-        );
-    }
 
     public void loadProfile(String profileName) {
         try {
             ComparisonProfile profile = profileService.loadProfile(profileName);
+
+            // Handle missing files
+            String sourcePath = profile.getSourceFilePath();
+            if (sourcePath != null && !new File(sourcePath).exists()) {
+                sourcePath = promptForNewFilePath(sourcePath, "Data File");
+                if (sourcePath == null) return; // User cancelled
+                profile.setSourceFilePath(sourcePath);
+            }
+
+            String targetPath = profile.getTargetFilePath();
+            if (targetPath != null && !new File(targetPath).exists()) {
+                targetPath = promptForNewFilePath(targetPath, "Filter Values File");
+                if (targetPath == null) return; // User cancelled
+                profile.setTargetFilePath(targetPath);
+            }
 
             dataFilePanel.setFileAndSheet(profile.getSourceFilePath(), profile.getSourceSheetName());
             dataFilePanel.setHeaderSelection(profile.getSourceHeaderRows(), profile.getSourceConcatenationMode());
@@ -576,6 +574,22 @@ public class FilterPanel extends JPanel {
         } catch (Exception e) {
             logger.error("Failed to load profile", e);
             JOptionPane.showMessageDialog(this, "Error loading profile: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String promptForNewFilePath(String originalPath, String fileDescription) {
+        String message = String.format("The %s file was not found at the specified path:\n%s\nPlease locate the file.", fileDescription, originalPath);
+        JOptionPane.showMessageDialog(this, message, "File Not Found", JOptionPane.WARNING_MESSAGE);
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Locate " + fileDescription);
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Excel Files", "xlsx", "xls"));
+        int result = fileChooser.showOpenDialog(this);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            return fileChooser.getSelectedFile().getAbsolutePath();
+        } else {
+            return null; // User cancelled
         }
     }
 
