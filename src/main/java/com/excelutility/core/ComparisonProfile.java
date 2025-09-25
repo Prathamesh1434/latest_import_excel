@@ -40,6 +40,9 @@ public class ComparisonProfile {
     private FilterGroup sourceFilterGroup;
     private FilterGroup targetFilterGroup;
 
+    // Filter Builder State
+    private FilterBuilderState filterBuilderState;
+
     // Performance settings
     private boolean useStreaming = false;
 
@@ -83,4 +86,6 @@ public class ComparisonProfile {
     public void setSourceFilterGroup(FilterGroup sourceFilterGroup) { this.sourceFilterGroup = sourceFilterGroup; }
     public FilterGroup getTargetFilterGroup() { return targetFilterGroup; }
     public void setTargetFilterGroup(FilterGroup targetFilterGroup) { this.targetFilterGroup = targetFilterGroup; }
+    public FilterBuilderState getFilterBuilderState() { return filterBuilderState; }
+    public void setFilterBuilderState(FilterBuilderState filterBuilderState) { this.filterBuilderState = filterBuilderState; }
 }

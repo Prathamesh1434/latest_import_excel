@@ -3,7 +3,7 @@ package com.excelutility.gui;
 import com.excelutility.core.*;
 import com.excelutility.core.expression.FilterExpression;
 import com.excelutility.io.ExcelReader;
-import com.excelutility.io.FilterProfileService;
+import com.excelutility.io.ProfileService;
 import com.excelutility.io.SimpleExcelWriter;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ public class FilterPanel extends JPanel {
     private final FilteringService filteringService = new FilteringService();
     private JLabel totalMatchesLabel;
     private JTabbedPane unifiedDataViewTabs;
-    private final FilterProfileService filterProfileService = new FilterProfileService();
+    private final ProfileService profileService = new ProfileService("filter-profiles");
     private boolean isDirty = false;
 
     private enum ProcessDestination { VIEW, CALCULATE_ONLY }
@@ -477,14 +477,9 @@ public class FilterPanel extends JPanel {
         saveProfileItem.addActionListener(e -> saveFilterProfile());
         fileMenu.add(saveProfileItem);
 
-        JMenuItem loadProfileItem = new JMenuItem("Load Profile...");
-        loadProfileItem.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_L, getShortcutMask()));
-        loadProfileItem.addActionListener(e -> loadFilterProfile());
-        fileMenu.add(loadProfileItem);
-
-        JMenuItem deleteProfileItem = new JMenuItem("Delete Profile...");
-        deleteProfileItem.addActionListener(e -> deleteFilterProfile());
-        fileMenu.add(deleteProfileItem);
+        JMenuItem manageProfilesItem = new JMenuItem("Manage Profiles...");
+        manageProfilesItem.addActionListener(e -> openProfileManager());
+        fileMenu.add(manageProfilesItem);
 
         fileMenu.addSeparator();
         JMenuItem exitItem = new JMenuItem("Exit");
@@ -517,8 +512,18 @@ public class FilterPanel extends JPanel {
         }
 
         try {
-            FilterProfile profile = createProfileFromUI(profileName);
-            filterProfileService.saveProfile(profile);
+            ComparisonProfile profile = new ComparisonProfile();
+            profile.setSourceFilePath(dataFilePanel.getFilePath());
+            profile.setSourceSheetName(dataFilePanel.getSelectedSheet());
+            profile.setSourceHeaderRows(dataFilePanel.getHeaderRowIndices());
+            profile.setSourceConcatenationMode(dataFilePanel.getConcatenationMode());
+            profile.setTargetFilePath(filterValuesFilePanel.getFilePath());
+            profile.setTargetSheetName(filterValuesFilePanel.getSelectedSheet());
+            profile.setTargetHeaderRows(filterValuesFilePanel.getHeaderRowIndices());
+            profile.setTargetConcatenationMode(filterValuesFilePanel.getConcatenationMode());
+            profile.setFilterBuilderState(filterExpressionBuilderPanel.getState());
+
+            profileService.saveProfile(profile, profileName);
             isDirty = false;
             JOptionPane.showMessageDialog(this, "Profile '" + profileName + "' saved successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
@@ -527,73 +532,9 @@ public class FilterPanel extends JPanel {
         }
     }
 
-    private void loadFilterProfile() {
-        List<File> profiles = filterProfileService.getAvailableProfiles();
-        if (profiles.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No profiles found.", "Load Profile", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        ProfileChooserDialog dialog = new ProfileChooserDialog((Frame) SwingUtilities.getWindowAncestor(this), profiles);
+    private void openProfileManager() {
+        ProfileManagerDialog dialog = new ProfileManagerDialog((Frame) SwingUtilities.getWindowAncestor(this), profileService, this);
         dialog.setVisible(true);
-
-        File selectedProfileFile = dialog.getSelectedProfile();
-        if (selectedProfileFile == null) {
-            return; // User cancelled
-        }
-
-        if (dialog.isDeleteRequested()) {
-            handleProfileDeletion(selectedProfileFile);
-        } else {
-            handleProfileLoad(selectedProfileFile);
-        }
-    }
-
-    private void deleteFilterProfile() {
-        List<File> profiles = filterProfileService.getAvailableProfiles();
-        if (profiles.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No profiles to delete.", "Delete Profile", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        ProfileChooserDialog dialog = new ProfileChooserDialog((Frame) SwingUtilities.getWindowAncestor(this), profiles);
-        dialog.setVisible(true);
-
-        File selectedProfileFile = dialog.getSelectedProfile();
-        if (selectedProfileFile != null && dialog.isDeleteRequested()) {
-            handleProfileDeletion(selectedProfileFile);
-        }
-    }
-
-    private void handleProfileLoad(File profileFile) {
-        try {
-            FilterProfile profile = filterProfileService.loadProfile(profileFile);
-            rebuildUIFromProfile(profile);
-            isDirty = false;
-            JOptionPane.showMessageDialog(this, "Profile '" + profile.getProfileName() + "' loaded successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            logger.error("Failed to load profile", e);
-            JOptionPane.showMessageDialog(this, "Error loading profile: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void handleProfileDeletion(File profileFile) {
-        String profileName = profileFile.getName();
-        int response = JOptionPane.showConfirmDialog(this,
-                "This will permanently remove the profile file:\n" + profileName + "\nAre you sure?",
-                "Delete profile \"" + profileName + "\"?",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE);
-
-        if (response == JOptionPane.YES_OPTION) {
-            try {
-                filterProfileService.deleteProfile(profileFile);
-                JOptionPane.showMessageDialog(this, "Profile '" + profileName + "' deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception e) {
-                logger.error("Failed to delete profile", e);
-                JOptionPane.showMessageDialog(this, "Error deleting profile: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
     }
 
     private FilterProfile createProfileFromUI(String profileName) {
@@ -614,20 +555,28 @@ public class FilterPanel extends JPanel {
         );
     }
 
-    private void rebuildUIFromProfile(FilterProfile profile) {
-        dataFilePanel.setFileAndSheet(profile.getDataFilePath(), profile.getDataSheet());
-        dataFilePanel.setHeaderSelection(profile.getDataHeaderRowIndices(), profile.getDataConcatenationMode());
+    public void loadProfile(String profileName) {
+        try {
+            ComparisonProfile profile = profileService.loadProfile(profileName);
 
-        filterValuesFilePanel.setFileAndSheet(profile.getFilterFilePath(), profile.getFilterSheet());
-        filterValuesFilePanel.setHeaderSelection(profile.getFilterHeaderRowIndices(), profile.getFilterConcatenationMode());
+            dataFilePanel.setFileAndSheet(profile.getSourceFilePath(), profile.getSourceSheetName());
+            dataFilePanel.setHeaderSelection(profile.getSourceHeaderRows(), profile.getSourceConcatenationMode());
 
-        filterExpressionBuilderPanel.rebuildFromState(profile.getFilterBuilder());
+            filterValuesFilePanel.setFileAndSheet(profile.getTargetFilePath(), profile.getTargetSheetName());
+            filterValuesFilePanel.setHeaderSelection(profile.getTargetHeaderRows(), profile.getTargetConcatenationMode());
 
-        loadPreviews();
-        updateFilterResults();
-        isDirty = false; // Loading a profile makes it "not dirty"
+            filterExpressionBuilderPanel.rebuildFromState(profile.getFilterBuilderState());
 
-        logger.info("Profile '{}' loaded.", profile.getProfileName());
+            loadPreviews();
+            updateFilterResults();
+            isDirty = false; // Loading a profile makes it "not dirty"
+
+            logger.info("Profile '{}' loaded.", profileName);
+            JOptionPane.showMessageDialog(this, "Profile '" + profileName + "' loaded successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            logger.error("Failed to load profile", e);
+            JOptionPane.showMessageDialog(this, "Error loading profile: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void exitApplication() {

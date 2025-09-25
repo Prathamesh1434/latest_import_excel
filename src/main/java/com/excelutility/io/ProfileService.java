@@ -54,4 +54,13 @@ public class ProfileService {
             profileFile.delete();
         }
     }
+
+    public void exportProfile(String profileName, File destination) throws IOException {
+        ComparisonProfile profile = loadProfile(profileName);
+        mapper.writeValue(destination, profile);
+    }
+
+    public ComparisonProfile loadProfileFromFile(File profileFile) throws IOException {
+        return mapper.readValue(profileFile, ComparisonProfile.class);
+    }
 }
