@@ -267,6 +267,16 @@ public class FileConfigPanel extends JPanel {
     }
     public void setSelectedSheet(String sheetName) { sheetCombo.setSelectedItem(sheetName); }
     public FilterGroup getActiveFilterGroup() { return activeFilterGroup; }
+    public void setActiveFilterGroup(FilterGroup group) {
+        this.activeFilterGroup = group;
+        if (group != null) {
+            filterButton.setText("Filter (Active)");
+            filterButton.setForeground(Color.BLUE);
+        } else {
+            filterButton.setText("Filter...");
+            filterButton.setForeground(null);
+        }
+    }
     public JComboBox<String> getSheetCombo() { return sheetCombo; }
     public JButton getAutoSuggestButton() { return autoSuggestButton; }
     public JButton getPreviewButton() { return previewButton; }

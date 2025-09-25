@@ -27,6 +27,7 @@ public class ComparePanel extends JPanel {
     private final ComparisonProfile profile = new ComparisonProfile();
     private final ComparisonService comparisonService = new ComparisonService();
     private final ProfileService profileService = new ProfileService("profiles");
+    private final com.excelutility.io.ProfileManager profileManager = new com.excelutility.io.ProfileManager();
 
     private final FileConfigPanel sourceFilePanel;
     private final FileConfigPanel targetFilePanel;
@@ -132,13 +133,25 @@ public class ComparePanel extends JPanel {
         fileMenu.add(backItem);
         fileMenu.addSeparator();
 
-        JMenuItem saveProfileItem = new JMenuItem("Save Profile As...");
+        JMenuItem saveProfileItem = new JMenuItem("Save Local Profile...");
         saveProfileItem.addActionListener(e -> saveProfile());
         fileMenu.add(saveProfileItem);
 
-        JMenuItem loadProfileItem = new JMenuItem("Load Profile...");
+        JMenuItem loadProfileItem = new JMenuItem("Load Local Profile...");
         loadProfileItem.addActionListener(e -> loadProfile());
         fileMenu.add(loadProfileItem);
+
+        fileMenu.addSeparator();
+
+        JMenuItem exportSharedProfileItem = new JMenuItem("Export Shared Profile (.json)...");
+        exportSharedProfileItem.addActionListener(e -> exportSharedProfile());
+        fileMenu.add(exportSharedProfileItem);
+
+        JMenuItem importSharedProfileItem = new JMenuItem("Import Shared Profile (.json)...");
+        importSharedProfileItem.addActionListener(e -> importSharedProfile());
+        fileMenu.add(importSharedProfileItem);
+
+        fileMenu.addSeparator();
 
         JMenuItem exportResultsItem = new JMenuItem("Export Results...");
         exportResultsItem.addActionListener(e -> exportResults());
@@ -345,7 +358,21 @@ public class ComparePanel extends JPanel {
         if (selectedProfile != null) {
             try {
                 ComparisonProfile loadedProfile = profileService.loadProfile(selectedProfile);
-                updateGuiFromProfile(loadedProfile);
+                // Directly update the main profile object
+                this.profile.setSourceFilePath(loadedProfile.getSourceFilePath());
+                this.profile.setSourceSheetName(loadedProfile.getSourceSheetName());
+                this.profile.setTargetFilePath(loadedProfile.getTargetFilePath());
+                this.profile.setTargetSheetName(loadedProfile.getTargetSheetName());
+                profileManager.mergeProfiles(this.profile, loadedProfile);
+
+                // Update the UI from the now-updated main profile
+                updateUIFromProfile();
+
+                // Also update the file panels since they are not covered by the merge
+                sourceFilePanel.setFilePath(loadedProfile.getSourceFilePath(), () -> loadHeaders(true));
+                targetFilePanel.setFilePath(loadedProfile.getTargetFilePath(), () -> loadHeaders(false));
+
+
                 JOptionPane.showMessageDialog(this, "Profile '" + selectedProfile + "' loaded successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(this, "Error loading profile: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -369,48 +396,71 @@ public class ComparePanel extends JPanel {
         profile.setTargetFilterGroup(targetFilePanel.getActiveFilterGroup());
     }
 
-    private void updateGuiFromProfile(ComparisonProfile loadedProfile) {
-        // Use a callback to sequence the loading process
-        Runnable afterTargetLoad = () -> {
-            if (this.sourceHeaders != null && this.targetHeaders != null &&
-                loadedProfile.getColumnMappings() != null && loadedProfile.getKeyColumns() != null) {
-                columnMappingPanel.setMappings(loadedProfile.getColumnMappings(), loadedProfile.getKeyColumns());
-            }
-            if (loadedProfile.getIgnoredColumns() != null) {
-                columnMappingPanel.setIgnoredColumns(loadedProfile.getIgnoredColumns());
-            }
-        };
+    private void updateUIFromProfile() {
+        // This method should be called after a profile is loaded to update the GUI
+        // It needs to repopulate all the fields based on the 'comparisonProfile' object
+        sourceFilePanel.setHeaderRowIndices(profile.getSourceHeaderRows());
+        sourceFilePanel.setConcatenationMode(profile.getSourceConcatenationMode());
+        targetFilePanel.setHeaderRowIndices(profile.getTargetHeaderRows());
+        targetFilePanel.setConcatenationMode(profile.getTargetConcatenationMode());
 
-        Runnable afterSourceLoad = () -> {
-            sourceFilePanel.setSelectedSheet(loadedProfile.getSourceSheetName());
-            if(loadedProfile.getSourceHeaderRows() != null) {
-                sourceFilePanel.setHeaderRowIndices(loadedProfile.getSourceHeaderRows());
+        // We need to reload headers to ensure column mappings can be applied correctly
+        loadHeaders(true);
+        loadHeaders(false);
+
+        // Postpone mapping update until after headers are loaded
+        SwingUtilities.invokeLater(() -> {
+            if (sourceHeaders != null && targetHeaders != null) {
+                columnMappingPanel.setColumns(sourceHeaders, targetHeaders);
+                columnMappingPanel.setMappings(profile.getColumnMappings(), profile.getKeyColumns());
+                columnMappingPanel.setIgnoredColumns(profile.getIgnoredColumns());
             }
-            if(loadedProfile.getSourceConcatenationMode() != null) {
-                sourceFilePanel.setConcatenationMode(loadedProfile.getSourceConcatenationMode());
+        });
+
+        // Update filter panels if they exist
+        sourceFilePanel.setActiveFilterGroup(profile.getSourceFilterGroup());
+        targetFilePanel.setActiveFilterGroup(profile.getTargetFilterGroup());
+    }
+
+    private void importSharedProfile() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Import Shared Comparison Profile");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JSON Files", "json"));
+        int userSelection = fileChooser.showOpenDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToLoad = fileChooser.getSelectedFile();
+            try {
+                ComparisonProfile loadedProfile = profileManager.loadProfile(fileToLoad);
+                profileManager.mergeProfiles(this.profile, loadedProfile);
+                updateUIFromProfile();
+                JOptionPane.showMessageDialog(this, "Shared profile loaded successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Error loading shared profile: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-            if (loadedProfile.getSourceSheetName() != null) {
-                loadHeaders(true);
+        }
+    }
+
+    private void exportSharedProfile() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Export Shared Comparison Profile");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JSON Files", "json"));
+        int userSelection = fileChooser.showSaveDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+            if (!fileToSave.getName().toLowerCase().endsWith(".json")) {
+                fileToSave = new File(fileToSave.getParentFile(), fileToSave.getName() + ".json");
             }
 
-            // Now load the target file and its dependent settings
-            targetFilePanel.setFilePath(loadedProfile.getTargetFilePath(), () -> {
-                targetFilePanel.setSelectedSheet(loadedProfile.getTargetSheetName());
-                if(loadedProfile.getTargetHeaderRows() != null) {
-                    targetFilePanel.setHeaderRowIndices(loadedProfile.getTargetHeaderRows());
-                }
-                if(loadedProfile.getTargetConcatenationMode() != null) {
-                    targetFilePanel.setConcatenationMode(loadedProfile.getTargetConcatenationMode());
-                }
-                if (loadedProfile.getTargetSheetName() != null) {
-                    loadHeaders(false);
-                }
-                SwingUtilities.invokeLater(afterTargetLoad);
-            });
-        };
-
-        // Start the chain by loading the source file
-        sourceFilePanel.setFilePath(loadedProfile.getSourceFilePath(), afterSourceLoad);
+            try {
+                updateProfileFromGui();
+                profileManager.saveProfile(this.profile, fileToSave);
+                JOptionPane.showMessageDialog(this, "Shared profile saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Error saving shared profile: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void autoSuggestKeys(boolean isSource) {

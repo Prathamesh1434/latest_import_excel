@@ -9,6 +9,9 @@ public class FilterCondition {
     private Object value; // Can be a single value, a List for IN_LIST, or a range
     private boolean caseInsensitive = true;
 
+    // No-arg constructor for Jackson deserialization
+    public FilterCondition() {}
+
     // Constructors, Getters, and Setters
     public FilterCondition(String columnName, Operator operator, Object value) {
         this.columnName = columnName;
