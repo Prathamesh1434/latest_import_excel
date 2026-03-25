@@ -1,0 +1,68 @@
+# ─────────────────────────────────────────────
+# Scorecard: KRI Dashboard
+# File: chatbot/metadata/kri-dashboard.yaml
+# ─────────────────────────────────────────────
+
+scorecard_id:   kri-dashboard
+name:           KRI Dashboard
+region:         UK
+system:         CRMR
+period:         Feb 2026
+report_date:    28/02/2026
+
+kri:
+  id:   UK-K11
+  name: "CDE Data Quality in CRMR"
+  description: "% of CDE level data quality rules meeting agreed tolerance within Citi Risk Market"
+
+overall:
+  result:      82.35%
+  total_rules: 34
+
+by_report:
+  corep_own_funds:
+    solo:
+      result:      88.24%
+      total_rules: 34
+    consolidated:
+      result:      82.35%
+      total_rules: 34
+  large_exposure:
+    solo:
+      result:      85.71%
+      total_rules: 28
+    consolidated:
+      result:      70.57%
+      total_rules: 28
+
+by_product:
+  - product: Debt
+    solo_result:         84.62%
+    solo_pass_new:       26
+    consolidated_result: 76.92%
+    consolidated_pass_new: 26
+  - product: ETD
+    solo_result:         87.50%
+    solo_pass_new:       32
+    consolidated_result: 81.25%
+    consolidated_pass_new: 32
+  - product: OTC
+    solo_result:         87.50%
+    solo_pass_new:       32
+    consolidated_result: 81.25%
+    consolidated_pass_new: 32
+  - product: SEC
+    solo_result:         81.82%
+    solo_pass_new:       22
+    consolidated_result: 72.73%
+    consolidated_pass_new: 32
+
+analysis:
+  lowest_product_solo:         "SEC at 81.82%"
+  lowest_product_consolidated: "Large Exposure Consolidated at 70.57%"
+  gap_solo_vs_consolidated:    "Solo consistently higher than Consolidated across all products"
+
+scope_instruction: >
+  You are an AI assistant ONLY for the KRI Dashboard (UK-K11, Feb 2026).
+  Answer only questions about this dashboard — overall results, by-report, by-product breakdowns.
+  If asked about any other scorecard, respond: "I am scoped only to the KRI Dashboard."

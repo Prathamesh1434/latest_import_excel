@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>B&amp;I Controls AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --navy:   #003087;
+  --blue:   #0057B8;
+  --bg:     #F4F5F7;
+  --white:  #FFFFFF;
+  --border: #D8DCE6;
+  --text:   #1A1F36;
+  --text-2: #5A6070;
+  --text-3: #8C94A4;
+  --blue-lt:#E8EFF9;
+  --fail:   #FDECEA; --fail-c: #C62828;
+  --font: 'Source Sans 3', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font);
+  background: var(--white);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--navy);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-icon {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  display: grid; place-items: center;
+  color: #fff; font-size: 15px;
+}
+.header-title { font-size: 13px; font-weight: 700; color: #fff; }
+.header-scope {
+  font-size: 10px; color: rgba(255,255,255,.55);
+  margin-top: 2px;
+  max-width: 200px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.header-badge {
+  font-size: 9px; font-weight: 700;
+  background: rgba(255,255,255,.15);
+  color: rgba(255,255,255,.8);
+  padding: 2px 8px; border-radius: 10px;
+  letter-spacing: .5px;
+}
+
+/* ── Messages ── */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg);
+}
+.messages::-webkit-scrollbar { width: 4px; }
+.messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.msg {
+  max-width: 92%;
+  font-size: 12px;
+  line-height: 1.65;
+  padding: 9px 12px;
+  border-radius: 8px;
+  word-break: break-word;
+}
+.msg.user {
+  align-self: flex-end;
+  background: var(--navy);
+  color: #fff;
+  border-bottom-right-radius: 3px;
+}
+.msg.ai {
+  align-self: flex-start;
+  background: var(--white);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 3px;
+}
+.msg.typing {
+  align-self: flex-start;
+  background: var(--white);
+  color: var(--text-3);
+  border: 1px solid var(--border);
+  font-style: italic;
+}
+.msg.error {
+  align-self: flex-start;
+  background: var(--fail);
+  color: var(--fail-c);
+  border: 1px solid #FFCDD2;
+  font-size: 11px;
+}
+
+/* ── Chips ── */
+.chips {
+  padding: 8px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.chip {
+  font-size: 11px;
+  color: var(--blue);
+  background: var(--blue-lt);
+  border: 1px solid #C7D9F3;
+  padding: 3px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background .15s;
+}
+.chip:hover { background: #D0E4FF; }
+
+/* ── Input ── */
+.input-row {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 7px;
+  align-items: flex-end;
+  background: var(--white);
+  flex-shrink: 0;
+}
+.input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: var(--font);
+  resize: none;
+  line-height: 1.5;
+  max-height: 72px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+}
+.input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,87,184,.1); }
+.input::placeholder { color: var(--text-3); }
+.send-btn {
+  width: 34px; height: 34px;
+  border-radius: 5px;
+  background: var(--navy);
+  border: none; cursor: pointer;
+  color: #fff;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.send-btn:hover:not(:disabled) { background: var(--blue); }
+.send-btn:disabled { background: var(--border); cursor: not-allowed; }
+
+/* ── Footer ── */
+.footer {
+  padding: 6px 14px;
+  font-size: 10px;
+  color: var(--text-3);
+  text-align: center;
+  border-top: 1px solid var(--border);
+  background: var(--white);
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🤖</div>
+    <div>
+      <div class="header-title">B&amp;I Controls AI</div>
+      <div class="header-scope" id="scope-label">Loading…</div>
+    </div>
+  </div>
+  <span class="header-badge">SCOPED</span>
+</div>
+
+<div class="messages" id="messages"></div>
+
+<div class="chips" id="chips"></div>
+
+<div class="input-row">
+  <textarea
+    class="input" id="chat-input"
+    placeholder="Ask about this scorecard…"
+    rows="1"
+  ></textarea>
+  <button class="send-btn" id="send-btn">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+    </svg>
+  </button>
+</div>
+
+<div class="footer">Scoped to selected scorecard · Citi Confidential</div>
+
+<script>
+/* ── Config ── */
+const API_URL = "http://localhost:8000/chat";
+
+/* ── Read scorecard id + name from URL params ──
+   e.g. chatbot.html?id=uk-kri&name=UK+KRI+Scorecard
+   These are set automatically when opened from the hub.
+── */
+const params       = new URLSearchParams(window.location.search);
+const scorecardId  = params.get("id")   || "unknown";
+const scorecardName= params.get("name") || "Unknown Scorecard";
+const chipsParam   = params.get("chips")|| "[]";
+
+let chips = [];
+try { chips = JSON.parse(decodeURIComponent(chipsParam)); } catch(e) {}
+
+/* ── Init ── */
+document.getElementById("scope-label").textContent = scorecardName;
+document.title = `AI — ${scorecardName}`;
+
+const msgBox   = document.getElementById("messages");
+const chipsEl  = document.getElementById("chips");
+const input    = document.getElementById("chat-input");
+const sendBtn  = document.getElementById("send-btn");
+
+let history = [];
+
+/* ── Render chips ── */
+if (chips.length) {
+  chipsEl.innerHTML = chips.map(c =>
+    `<button class="chip" onclick="sendChip('${c.replace(/'/g, "\\'")}')">${c}</button>`
+  ).join("");
+} else {
+  chipsEl.style.display = "none";
+}
+
+/* ── Greeting ── */
+addMsg("ai", `I'm scoped to <strong>${scorecardName}</strong>.<br>Ask me anything about this scorecard — I'll only answer based on its data.`);
+
+/* ── Input handlers ── */
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+});
+sendBtn.addEventListener("click", send);
+
+function sendChip(text) {
+  input.value = text;
+  chipsEl.style.display = "none";
+  send();
+}
+
+/* ── Send ── */
+async function send() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMsg("user", text);
+  history.push({ role: "user", content: text });
+  input.value = "";
+  sendBtn.disabled = true;
+  chipsEl.style.display = "none";
+
+  const typingId = "t" + Date.now();
+  addMsg("typing", "Thinking…", typingId);
+
+  try {
+    const res = await fetch(API_URL, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scorecard_id: scorecardId,
+        messages:     history,
+        max_tokens:   500,
+      }),
+    });
+
+    document.getElementById(typingId)?.remove();
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    const data  = await res.json();
+    const reply = data.reply || "No response.";
+
+    addMsg("ai", reply);
+    history.push({ role: "assistant", content: reply });
+
+  } catch (err) {
+    document.getElementById(typingId)?.remove();
+    if (err.message.includes("Failed to fetch")) {
+      addMsg("error",
+        "⚠️ Backend not running.<br>" +
+        "Run: <code>uvicorn chat_api:app --port 8000</code>"
+      );
+    } else {
+      addMsg("error", `⚠️ ${err.message}`);
+    }
+  }
+
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+/* ── Helper ── */
+function addMsg(type, html, id) {
+  const d = document.createElement("div");
+  d.className = `msg ${type}`;
+  d.innerHTML = html;
+  if (id) d.id = id;
+  msgBox.appendChild(d);
+  msgBox.scrollTop = msgBox.scrollHeight;
+}
+
+/* ── Auto-resize textarea ── */
+input.addEventListener("input", () => {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 72) + "px";
+});
+
+input.focus();
+</script>
+</body>
+</html>

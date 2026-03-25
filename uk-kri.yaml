@@ -1,0 +1,71 @@
+# ─────────────────────────────────────────────
+# Scorecard: UK KRI Scorecard
+# File: chatbot/metadata/uk-kri.yaml
+# ─────────────────────────────────────────────
+
+scorecard_id:   uk-kri
+name:           UK KRI Scorecard
+region:         UK
+period:         Feb 2026
+overall_rag:    Red
+
+kris:
+  - id: UK-K40
+    name: "% high-risk data concerns with compensating measures"
+    current_value: 0.95       # 95%
+    previous_value: 0.88      # 88%
+    red_threshold: 0.80       # <80% = Red
+    rag: Red
+    note: "Above red threshold — concern is that value is high meaning compensating measures may be masking underlying issues"
+
+  - id: UK-K41
+    name: "% data concerns meeting SLA phase dates"
+    current_value: 0.08       # 8%
+    previous_value: 0.19      # 19%
+    red_threshold: 0.70       # <70% = Red
+    rag: Red
+    note: "Chronic Red — was 0% in Dec-25, 19% Jan-26, now 8% Feb-26. Well below 70% threshold."
+
+  - id: UK-K42
+    name: "% open data concerns inside agreed remediation timelines"
+    current_value: 0.89       # 89%
+    previous_value: 0.85      # 85%
+    red_threshold: 0.65       # <65% = Red
+    rag: Red
+    note: "Above red threshold but trending — watch for deterioration"
+
+  - id: UK-K43
+    name: "# high severity impact-weighted DQ issues"
+    current_value_l1: 2.47
+    current_value_ldl2: 2.09
+    red_threshold: ">=1 L1 or LDL2"
+    rag: Red
+    note: "Both L1 and LDL2 counts exceed threshold of 1"
+
+  - id: UK-K44
+    name: "% control effectiveness for DQ controls impacting CGML"
+    current_value: null
+    red_threshold: 0.75       # <75% = Red
+    rag: NA
+    note: "Data not yet available"
+
+  - id: UK-K45
+    name: "Local adoption of Citi Data Governance Policy"
+    current_value: null
+    rag: NA
+    note: "Data not yet available"
+
+variance_rules:
+  breach_threshold: 0.10      # >10% change month-over-month = breach
+  k41_variance: "-57.9%"      # (8%-19%)/19% = significant breach
+  k40_variance: "+8%"         # (95%-88%)/88% = within threshold
+
+rag_definitions:
+  Red:   "Value breaches the red threshold — immediate attention required"
+  Amber: "Value approaching threshold — monitor closely"
+  Green: "Value within acceptable range"
+
+scope_instruction: >
+  You are an AI assistant ONLY for the UK KRI Scorecard (Feb 2026).
+  Answer only questions about UK KRI metrics, thresholds, RAG status, and variance.
+  If asked about any other scorecard, respond: "I am scoped only to the UK KRI Scorecard."

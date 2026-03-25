@@ -1,88 +1,73 @@
-# Excel Utility
+# B&I Controls Hub v2 — Setup Guide
 
-A production-ready, GUI-only Java Swing desktop application for comparing Excel files and filtering Excel data. This tool provides a comprehensive set of features for normalization, key mapping, detailed comparison, interactive filtering, and reporting, all configurable through an intuitive user interface.
+## What's New
+- 🖼 **Preview button** — fetches live PNG snapshot via Tableau REST API
+- ⬇ **Download PDF** — downloads PDF of the dashboard
+- 🤖 **Chat button** — opens scoped AI chatbot popup
+- **Open ↗** — opens full interactive Tableau in new tab
 
-## Application Structure
+---
 
-The application now launches into a **Mode Selection** screen. From here, you can choose your desired workflow. A "File" menu is always available, allowing you to go **Back to Mode Selection** at any time to switch workflows without restarting the application.
+## Step 1 — Fill in .env
 
-## Modes of Operation
-
-### 1. Compare Excel Files (Classic Mode)
-
-This mode allows you to perform a detailed comparison of two Excel files.
-
-**Key Features**:
-
--   **Advanced Key Column Selection**: Interactively map columns and select a composite key.
--   **Header Normalization**: Supports multi-row and merged-cell headers.
--   **Profile Management**: Save and load complex comparison configurations.
--   **Large File Support**: Includes a streaming mode to handle large `.xlsx` files efficiently.
-
-### 2. Spec QA Recon (New)
-
-This mode allows you to filter one Excel file based on a list of values or entire columns from another Excel file.
-
-**Key Features**:
-
--   **Advanced Header Detection**: Both the data file and the filter-values file support single-row, multi-row, and merged-cell headers, ensuring accurate data parsing.
--   **Interactive Filter Creation**: Load a "Data File" and a "Filter Values File". Simply double-click any cell (or select multiple cells) in the "Filter Values" preview table to create a filter.
--   **Flexible Filter Sources**: A dialog will ask if you want to filter by the specific **cell value** you clicked, or by all values in that cell's **column**.
--   **Targeted Filtering**: After choosing your filter source, another dialog lets you apply the filter to one or more columns in your Data File. You can also choose to **trim whitespace** from the target column for more robust matching.
--   **Immediate Record Counting**: As soon as a filter is created, the application runs a background check and displays the number of matching records. The count is color-coded: **green for > 0** records, **red for 0**.
--   **Enhanced Previews**: Preview tables now have a grid-like appearance and support column sorting.
--   **Sheet Search**: A new search bar allows you to dynamically filter the list of sheets in a workbook.
--   **Empty Cell Filtering**: The tool now correctly handles filtering by empty or null cells.
--   **Configurable Export**:
-    -   Download all filtered results into a **single Excel file** with one sheet per filter, or as **separate files**.
-    -   If a filter yields no results, an export file is still created with a "No rows matched" message.
-    -   Choose a custom **highlight color** for the filtered rows in the exported files.
-
-## Technical Stack
-
--   **Language**: Java 11
--   **UI**: Java Swing with MigLayout
--   **Excel Handling**: Apache POI (including streaming APIs)
--   **Serialization**: Jackson (for profiles)
--   **Logging**: SLF4J + Logback
--   **Build Tool**: Maven with the `maven-shade-plugin`
-
-## How to Build and Run
-
-### Build
-
-To compile and package the application into a single runnable "fat JAR", run:
-```sh
-mvn clean package
-```
-This creates `excel-utility-1.0.0-all.jar` in the `target` directory.
-
-### Run
-
-Execute the generated JAR file:
-```sh
-java -jar target/excel-utility-1.0.0-all.jar
-```
-You will be prompted to choose a mode upon startup.
-
-### Run Tests
-
-To run the full suite of unit tests:
-```sh
-mvn test
+```cmd
+cd bi-controls-hub-v2\chatbot
+copy .env.example .env
 ```
 
-## Developer Notes
+Edit `.env`:
+```
+ANTHROPIC_API_KEY=your-key
+TABLEAU_SERVER=https://your-tableau-server.com
+TABLEAU_USERNAME=your-username
+TABLEAU_PASSWORD=your-password
+TABLEAU_SITE=                         # blank = Default site
+TABLEAU_API_VERSION=3.18              # check your server version
+TABLEAU_SSL_CERT_PATH=/path/to/cert.pem
+```
 
--   **Project Structure**: The project is organized into `gui`, `core`, `io`, `excel`, and `test` packages. The main UI is managed by `AppContainer.java`, which uses a `CardLayout` to switch between `ModeSelectionPanel`, `ComparePanel`, and `FilterPanel`.
--   **Profiles**: Comparison profiles are saved as `.json` files in a `profiles/` directory created where the application is run.
--   **Test Cases**: Generated test cases are saved to the `target/test-cases/` directory.
+---
 
-## Troubleshooting
+## Step 2 — Add View IDs to scorecards.js
 
-If a comparison fails, the application will no longer crash. Instead, it will display a "Comparison Failed" dialog with a user-friendly error message.
+Open `assets/scorecards.js`.
+For each scorecard replace `YOUR_VIEW_ID_HERE` with the Tableau View ID.
 
-If you need to report a bug, please include the full details from this dialog:
-1.  Click the **"Details"** button to expand the dialog and show the full technical error message and stack trace.
-2.  Click the **"Copy to Clipboard"** button.
-3.  Paste the copied details into your bug report. This provides crucial information for debugging the issue.
+The Preview button only appears when a valid view_id is set.
+
+---
+
+## Step 3 — Run Backend (Terminal 1)
+
+```cmd
+conda activate prath
+cd bi-controls-hub-v2\chatbot
+uvicorn chat_api:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Test: http://localhost:8000/health
+
+---
+
+## Step 4 — Run Frontend (Terminal 2)
+
+```cmd
+cd bi-controls-hub-v2
+python -m http.server 8080
+```
+
+Open: http://localhost:8080
+
+---
+
+## How to Find Your Tableau API Version
+
+In Tableau Server: Help menu → About Tableau Server → shows version number.
+Map version to API:
+- Tableau 2023.1+ → API 3.18
+- Tableau 2022.4  → API 3.17
+- Tableau 2022.3  → API 3.16
+
+---
+
+*B&I Data Analytics · Citi Confidential · Workstream 2*

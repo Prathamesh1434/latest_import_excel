@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>B&amp;I Data Metrics and Controls</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="assets/style.css"/>
+<style>
+/* ── Button: Preview ── */
+.btn-preview {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600;
+  color: #2E7D32; background: #E6F4EA;
+  border: 1px solid #A5D6A7;
+  padding: 5px 12px; border-radius: 4px;
+  cursor: pointer; font-family: var(--font);
+  transition: background .15s;
+}
+.btn-preview:hover { background: #C8E6C9; }
+
+/* ── Snapshot Modal ── */
+.snap-modal {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.65);
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+
+.snap-box {
+  background: #fff;
+  border-radius: 8px;
+  width: 100%; max-width: 1200px;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,.4);
+}
+
+.snap-header {
+  background: var(--navy);
+  padding: 13px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.snap-header-left { display: flex; flex-direction: column; gap: 2px; }
+.snap-title { font-size: 14px; font-weight: 700; color: #fff; }
+.snap-subtitle { font-size: 10px; color: rgba(255,255,255,.5); }
+
+.snap-header-actions { display: flex; align-items: center; gap: 8px; }
+
+.snap-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  padding: 5px 12px; border-radius: 4px;
+  cursor: pointer; font-family: var(--font);
+  text-decoration: none; border: none;
+  transition: background .15s;
+}
+.snap-btn-chat {
+  background: rgba(255,255,255,.15); color: #fff;
+  border: 1px solid rgba(255,255,255,.25);
+}
+.snap-btn-chat:hover { background: rgba(255,255,255,.25); }
+.snap-btn-pdf {
+  background: #fff; color: var(--navy);
+}
+.snap-btn-pdf:hover { background: #E8EFF9; }
+.snap-btn-close {
+  background: none; color: rgba(255,255,255,.6);
+  border: none; font-size: 18px; cursor: pointer;
+  line-height: 1; padding: 2px 6px;
+  transition: color .15s;
+}
+.snap-btn-close:hover { color: #fff; }
+
+.snap-body {
+  flex: 1; overflow: auto;
+  display: flex; align-items: flex-start; justify-content: center;
+  background: #F4F5F7; padding: 16px;
+}
+
+.snap-spinner {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; padding: 60px;
+  color: var(--text-3); font-size: 13px;
+}
+.spinner-ring {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--navy);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#snap-img {
+  max-width: 100%; border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.15);
+  display: none;
+}
+
+.snap-error {
+  display: none;
+  padding: 32px; text-align: center;
+  color: var(--fail-c); font-size: 13px;
+  background: var(--fail); border-radius: 6px;
+  border: 1px solid #FFCDD2; max-width: 480px;
+}
+.snap-error strong { display: block; margin-bottom: 6px; font-size: 14px; }
+
+.snap-footer {
+  padding: 8px 18px;
+  font-size: 11px; color: var(--text-3);
+  border-top: 1px solid var(--border-lt);
+  background: #fff; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.snap-refresh {
+  background: none; border: none;
+  color: var(--blue); font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: var(--font);
+  display: flex; align-items: center; gap: 4px;
+}
+.snap-refresh:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo-wrap">
+      <img src="assets/logo.png" alt="Logo" class="org-logo"
+        onerror="this.style.display='none';document.getElementById('lf').style.display='flex';"/>
+      <div id="lf" class="logo-fallback">citi</div>
+    </div>
+    <span class="brand-sep"></span>
+    <span class="brand-name">B&amp;I Data Metrics and Controls</span>
+  </div>
+  <div class="topbar-right">
+    <span class="env-tag">UAT</span>
+    <div class="user-chip">
+      <div class="avatar">PG</div>
+      <span>Prathmesh Gayakwad</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Menu</div>
+      <a class="sb-item" href="#">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+        Admin
+      </a>
+      <a class="sb-item active" href="#">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Data Control
+      </a>
+      <a class="sb-item" href="#">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/></svg>
+        Vault
+      </a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">External</div>
+      <a class="sb-item" href="#" target="_blank">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        KRI Scorecard <span class="sb-ext">↗</span>
+      </a>
+      <a class="sb-item" href="#" target="_blank">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        RedCAP <span class="sb-ext">↗</span>
+      </a>
+    </div>
+    <div class="sb-footer">Workstream 2<br>Controls Codification</div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-crumb"><a href="#">Home</a> <span>›</span> <span>Data Control</span></div>
+    <div class="page-title">Data Control</div>
+    <div class="page-sub">
+      🖼 <strong>Preview</strong> — shows live Tableau snapshot &nbsp;·&nbsp;
+      🤖 <strong>Chat</strong> — opens AI assistant scoped to that scorecard &nbsp;·&nbsp;
+      <strong>Open ↗</strong> — opens full interactive Tableau dashboard
+    </div>
+    <div class="sc-grid" id="sc-grid"></div>
+  </main>
+</div>
+
+<footer class="page-footer">
+  <a href="#">Terms and Conditions</a>
+  <a href="#">Privacy</a>
+  <a href="#">Contact Us</a>
+  <a href="#">Our Mission and Value Proposition</a>
+</footer>
+
+<!-- ══════════════════════════════════════════
+     SNAPSHOT MODAL
+     ══════════════════════════════════════════ -->
+<div class="snap-modal" id="snap-modal">
+  <div class="snap-box">
+
+    <div class="snap-header">
+      <div class="snap-header-left">
+        <div class="snap-title" id="snap-name">Dashboard</div>
+        <div class="snap-subtitle">Live snapshot via Tableau REST API</div>
+      </div>
+      <div class="snap-header-actions">
+        <button class="snap-btn snap-btn-chat" id="snap-chat-btn">🤖 Chat about this</button>
+        <a class="snap-btn snap-btn-pdf" id="snap-download" href="#" download>⬇ Download PDF</a>
+        <button class="snap-btn-close" onclick="closeSnapshot()">✕</button>
+      </div>
+    </div>
+
+    <div class="snap-body">
+      <div class="snap-spinner" id="snap-spinner">
+        <div class="spinner-ring"></div>
+        <span>Fetching dashboard snapshot…</span>
+      </div>
+      <img id="snap-img" alt="Dashboard snapshot"/>
+      <div class="snap-error" id="snap-error">
+        <strong>Could not load snapshot</strong>
+        Make sure the backend is running and the View ID is correct.<br>
+        <code>uvicorn chat_api:app --port 8000</code>
+      </div>
+    </div>
+
+    <div class="snap-footer">
+      <span>Static snapshot — for interactive filters click <strong>Open ↗</strong></span>
+      <button class="snap-refresh" onclick="refreshSnapshot()">↻ Refresh</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="assets/scorecards.js"></script>
+<script src="assets/app.js"></script>
+<script>
+/* Refresh button re-triggers the current snapshot */
+let _currentRefreshFn = null;
+function refreshSnapshot() {
+  if (_currentRefreshFn) _currentRefreshFn();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+# ─────────────────────────────────────────────
+# Scorecard: CRMR CDE Exceptions Scorecard
+# File: chatbot/metadata/crmr-cde.yaml
+# Update values each month — structure stays same
+# ─────────────────────────────────────────────
+
+scorecard_id:   crmr-cde
+name:           CRMR CDE Exceptions Scorecard
+region:         UK
+system:         CRMR
+period:         Feb 2026
+report_date:    28/02/2026
+
+summary:
+  total_rules:  37
+  fail_total:   7
+  pass_new:     18
+  within_threshold: 12
+  fail_amber:   3
+  fail_red:     4
+  data_concerns: 0
+
+dimensions:
+  - Completeness
+  - Accuracy
+
+reports:
+  - name: COREP Own Funds
+    sub_reports: [Solo, Consolidated]
+  - name: Large Exposure
+    sub_reports: [Solo, Consolidated]
+
+cdes:
+  - name: Currency Code
+    fail_count: 4
+    dimension: Completeness
+    segments:
+      - product: Debt
+        rule: RSK3S100_13
+        segment_count: 4337528
+        defects: 20337
+        quality_score: 99.5%
+        fail_pct: 0.5%
+      - product: Etd
+        rule: RSK3S100_13
+        segment_count: 4337528
+        defects: 20337
+        quality_score: 94.9%
+        fail_pct: 3.1%
+      - product: Otc
+        rule: RSK3S100_13
+        segment_count: 4337528
+        defects: 20337
+        quality_score: 99.5%
+        fail_pct: 0.5%
+      - product: Sec
+        rule: RSK3S100_13
+        segment_count: 4337528
+        defects: 20337
+        quality_score: 99.5%
+        fail_pct: 0.5%
+
+  - name: Internal Party / Legal Entity Id
+    fail_count: 2
+    dimension: Completeness
+    note: Failures in Consolidated report only
+
+  - name: Market Value
+    fail_count: 1
+    dimension: Completeness
+
+  - name: Maturity Date
+    fail_count: 2
+    dimension: Completeness
+
+  - name: Notional
+    fail_count: 2
+    dimension: Completeness
+
+  - name: Product Classification
+    fail_count: 4
+    dimension: Completeness
+
+  - name: Risk Sensitivity
+    fail_count: 2
+    dimension: Completeness
+
+  - name: Security Id
+    fail_count: 8
+    dimension: Completeness
+
+  - name: Trading Book / Banking Book
+    fail_count: 2
+    dimension: Completeness
+
+rag_rules:
+  pass_new:          "Rule passes 100% — no exceptions"
+  within_threshold:  "Rule passes within agreed tolerance"
+  fail_amber:        "Rule fails — amber severity"
+  fail_red:          "Rule fails — red severity, requires immediate attention"
+
+scope_instruction: >
+  You are an AI assistant ONLY for the CRMR CDE Exceptions Scorecard (Feb 2026).
+  Answer only questions about this scorecard. If asked about any other scorecard
+  or unrelated topic, respond: "I am scoped only to the CRMR CDE Exceptions Scorecard.
+  Please select the relevant scorecard to ask about it."

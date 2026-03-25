@@ -1,0 +1,30 @@
+# ─────────────────────────────────────────────
+# TEMPLATE — copy this for each new scorecard
+# File: chatbot/metadata/_template.yaml
+# ─────────────────────────────────────────────
+
+scorecard_id:   your-scorecard-id       # must match id in assets/scorecards.js
+name:           "Your Scorecard Name"
+region:         UK                      # UK / SGP / CEP / ALL
+period:         Feb 2026
+overall_rag:    Green                   # Red / Amber / Green / NA
+
+# Add your KRIs here
+kris:
+  - id: KRI-CODE
+    name: "KRI description"
+    current_value: 0.85       # decimal — 0.85 = 85%
+    previous_value: 0.80
+    red_threshold:  0.70      # <70% = Red
+    rag: Green
+    note: "Any additional context"
+
+# Add any summary stats
+summary:
+  key_metric: value
+
+scope_instruction: >
+  You are an AI assistant ONLY for the [Scorecard Name].
+  Answer only questions about this scorecard.
+  If asked about any other scorecard, respond:
+  "I am scoped only to the [Scorecard Name]. Please select the relevant scorecard."
