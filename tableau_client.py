@@ -1,176 +1,126 @@
 """
 tableau_client.py
-Handles Tableau REST API authentication and snapshot fetching.
+Tableau connection using tableauserverclient (TSC) — same library
+as your existing run_tableau_download.py script.
 
 Packages used (already in prath env):
-    requests==2.32.5
-    python-dotenv==1.2.1
+    tableauserverclient
+    python-dotenv
 """
 
-import requests
+import tableauserverclient as TSC
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── Config from .env ───────────────────────────────────────────────────────────
-TABLEAU_SERVER   = os.getenv("TABLEAU_SERVER")        # e.g. https://tableau.company.com
-TABLEAU_USERNAME = os.getenv("TABLEAU_USERNAME")
-TABLEAU_PASSWORD = os.getenv("TABLEAU_PASSWORD")
-TABLEAU_SITE     = os.getenv("TABLEAU_SITE", "")      # blank string = Default site
-TABLEAU_SSL_CERT = os.getenv("TABLEAU_SSL_CERT_PATH", True)  # path or True/False
-TABLEAU_API_VER  = os.getenv("TABLEAU_API_VERSION", "3.18")  # check your server version
-
-# ── Internal session state ─────────────────────────────────────────────────────
-_token   = None   # auth token, reused until it expires
-_site_id = None   # site ID returned at sign-in
+# ── Config from .env ──────────────────────────────────────────────────────────
+CONFIG = {
+    "server_url":    os.getenv("TABLEAU_SERVER"),
+    "username":      os.getenv("TABLEAU_USERNAME"),
+    "password":      os.getenv("TABLEAU_PASSWORD"),
+    "site":          os.getenv("TABLEAU_SITE", ""),
+    "ssl_cert_path": os.getenv("TABLEAU_SSL_CERT_PATH", ""),
+    "api_version":   os.getenv("TABLEAU_API_VERSION", "3.0"),
+}
 
 
-def _base_url() -> str:
-    return f"{TABLEAU_SERVER}/api/{TABLEAU_API_VER}"
-
-
-def _ssl() -> str | bool:
-    """Returns cert path string or True (verify with system certs) or False (skip verify)."""
-    if TABLEAU_SSL_CERT and TABLEAU_SSL_CERT not in ("True", "False", "true", "false"):
-        return TABLEAU_SSL_CERT   # it's a file path
-    return TABLEAU_SSL_CERT not in ("False", "false")
-
-
-def sign_in() -> str:
+def _get_server() -> TSC.Server:
     """
-    Sign in to Tableau Server using username + password.
-    Returns the auth token. Stores token + site_id globally for reuse.
+    Create and return an authenticated TSC Server object.
+    Mirrors exactly what your run_tableau_download.py does.
     """
-    global _token, _site_id
+    ssl_cert = CONFIG["ssl_cert_path"]
 
-    url = f"{_base_url()}/auth/signin"
+    # Verify SSL cert exists if path is provided
+    if ssl_cert and not os.path.exists(ssl_cert):
+        raise FileNotFoundError(f"SSL cert not found at: {ssl_cert}")
 
-    payload = {
-        "credentials": {
-            "name":     TABLEAU_USERNAME,
-            "password": TABLEAU_PASSWORD,
-            "site":     {"contentUrl": TABLEAU_SITE}
-        }
-    }
-
-    resp = requests.post(
-        url,
-        json=payload,
-        verify=_ssl(),
-        headers={"Content-Type": "application/json", "Accept": "application/json"},
-        timeout=30,
-    )
-    resp.raise_for_status()
-
-    data     = resp.json()
-    _token   = data["credentials"]["token"]
-    _site_id = data["credentials"]["site"]["id"]
-
-    return _token
-
-
-def sign_out() -> None:
-    """Sign out of Tableau Server and clear the token."""
-    global _token, _site_id
-
-    if not _token:
-        return
-
-    requests.post(
-        f"{_base_url()}/auth/signout",
-        headers={"x-tableau-auth": _token},
-        verify=_ssl(),
-        timeout=10,
+    # Same as your script — TSC.TableauAuth
+    tableau_auth = TSC.TableauAuth(
+        username=CONFIG["username"],
+        password=CONFIG["password"],
+        site_id=CONFIG["site"],
     )
 
-    _token   = None
-    _site_id = None
+    # Same as your script — TSC.Server + version pin
+    server = TSC.Server(CONFIG["server_url"])
+    server.version = CONFIG["api_version"]
+
+    # Same as your script — add_http_options for SSL
+    if ssl_cert:
+        server.add_http_options({"verify": ssl_cert})
+    else:
+        server.add_http_options({"verify": False})
+
+    # Sign in — same as your script
+    server.auth.sign_in(tableau_auth)
+    print(f"Successfully signed in to Tableau: {server.baseurl}")
+
+    return server
 
 
-def _get_token() -> str:
-    """Return current token, signing in first if needed."""
-    global _token
-    if not _token:
-        sign_in()
-    return _token
-
-
-def get_view_image(view_id: str, resolution: int = 1920) -> bytes:
+def get_view_image_bytes(view_id: str) -> bytes:
     """
-    Fetch a PNG snapshot of a Tableau view by view ID.
-
-    Args:
-        view_id:    Tableau view ID (from your scorecard config)
-        resolution: image width in pixels (default 1920)
-
-    Returns:
-        PNG image bytes
+    Fetch PNG snapshot of a Tableau view by view_id.
+    Returns PNG bytes to serve directly to the browser.
     """
-    token = _get_token()
+    server = _get_server()
+    try:
+        # Same as your script: server.views.get_by_id(view_id)
+        view_item = server.views.get_by_id(view_id)
+        print(f"Found view: '{view_item.name}'")
 
-    url = (
-        f"{_base_url()}/sites/{_site_id}"
-        f"/views/{view_id}/image"
-        f"?resolution={resolution}"
-    )
+        # Populate the image
+        server.views.populate_image(view_item)
 
-    resp = requests.get(
-        url,
-        headers={"x-tableau-auth": token},
-        verify=_ssl(),
-        timeout=60,
-    )
+        return view_item.image   # PNG bytes
 
-    # Token expired → sign in again and retry once
-    if resp.status_code == 401:
-        sign_in()
-        resp = requests.get(
-            url,
-            headers={"x-tableau-auth": _token},
-            verify=_ssl(),
-            timeout=60,
+    finally:
+        server.auth.sign_out()
+
+
+def get_view_pdf_bytes(
+    view_id: str,
+    page_type: str = "A4",
+    orientation: str = "Landscape"
+) -> bytes:
+    """
+    Fetch PDF of a Tableau view by view_id.
+    Same logic as your existing populate_pdf block.
+    """
+    server = _get_server()
+    try:
+        view_item = server.views.get_by_id(view_id)
+
+        # Same as your script
+        pdf_req_option = TSC.PDFRequestOptions(
+            page_type=TSC.PDFRequestOptions.PageType.Unspecified,
         )
 
-    resp.raise_for_status()
-    return resp.content   # PNG bytes
+        server.views.populate_pdf(view_item, pdf_req_option)
+
+        return view_item.pdf   # PDF bytes
+
+    finally:
+        server.auth.sign_out()
 
 
-def get_view_pdf(view_id: str, page_type: str = "A4", orientation: str = "Landscape") -> bytes:
+def get_view_csv_bytes(view_id: str) -> bytes:
     """
-    Fetch a PDF snapshot of a Tableau view by view ID.
-
-    Args:
-        view_id:     Tableau view ID
-        page_type:   A4 / Letter / Legal / Tabloid / Unspecified
-        orientation: Landscape / Portrait
-
-    Returns:
-        PDF bytes
+    Fetch CSV data of a Tableau view by view_id.
+    Same logic as your existing populate_csv block.
     """
-    token = _get_token()
+    server = _get_server()
+    try:
+        view_item = server.views.get_by_id(view_id)
 
-    url = (
-        f"{_base_url()}/sites/{_site_id}"
-        f"/views/{view_id}/pdf"
-        f"?type={page_type}&orientation={orientation}"
-    )
+        csv_req_option = TSC.CSVRequestOptions()
+        server.views.populate_csv(view_item, csv_req_option)
 
-    resp = requests.get(
-        url,
-        headers={"x-tableau-auth": token},
-        verify=_ssl(),
-        timeout=60,
-    )
+        # Same as your script — iterate chunks
+        csv_bytes = b"".join(chunk for chunk in view_item.csv)
+        return csv_bytes
 
-    if resp.status_code == 401:
-        sign_in()
-        resp = requests.get(
-            url,
-            headers={"x-tableau-auth": _token},
-            verify=_ssl(),
-            timeout=60,
-        )
-
-    resp.raise_for_status()
-    return resp.content   # PDF bytes
+    finally:
+        server.auth.sign_out()
