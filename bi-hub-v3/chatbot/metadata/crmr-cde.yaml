@@ -1,0 +1,52 @@
+# chatbot/metadata/crmr-cde.yaml
+scorecard_id:   crmr-cde
+name:           CRMR CDE Exceptions Scorecard
+region:         UK
+system:         CRMR
+period:         Feb 2026
+
+summary:
+  total_rules:       37
+  fail_total:        7
+  pass_new:          18
+  within_threshold:  12
+  fail_amber:        3
+  fail_red:          4
+  data_concerns:     0
+
+dimensions:   [Completeness, Accuracy]
+reports:      [COREP Own Funds, Large Exposure]
+
+cdes:
+  - name: Currency Code
+    fail_count: 4
+    dimension: Completeness
+  - name: Internal Party / Legal Entity Id
+    fail_count: 2
+    dimension: Completeness
+  - name: Market Value
+    fail_count: 1
+    dimension: Completeness
+  - name: Maturity Date
+    fail_count: 2
+    dimension: Completeness
+  - name: Notional
+    fail_count: 2
+    dimension: Completeness
+  - name: Product Classification
+    fail_count: 4
+    dimension: Completeness
+  - name: Risk Sensitivity
+    fail_count: 2
+    dimension: Completeness
+  - name: Security Id
+    fail_count: 8
+    dimension: Completeness
+  - name: Trading Book / Banking Book
+    fail_count: 2
+    dimension: Completeness
+
+scope_instruction: >
+  You are an AI assistant ONLY for the CRMR CDE Exceptions Scorecard (Feb 2026).
+  Only answer questions about this scorecard.
+  If asked about anything else say: "I am scoped only to the CRMR CDE Exceptions Scorecard."

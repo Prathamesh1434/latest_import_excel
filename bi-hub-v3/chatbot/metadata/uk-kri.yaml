@@ -1,0 +1,57 @@
+# chatbot/metadata/uk-kri.yaml
+scorecard_id:  uk-kri
+name:          UK KRI Scorecard
+region:        UK
+period:        Feb 2026
+overall_rag:   Red
+
+kris:
+  - id: UK-K40
+    name: "% high-risk data concerns with compensating measures"
+    current_value: 0.95
+    previous_value: 0.88
+    red_threshold: 0.80
+    rag: Red
+    note: "Above red threshold — 95% vs threshold of 80%"
+
+  - id: UK-K41
+    name: "% data concerns meeting SLA phase dates"
+    current_value: 0.08
+    previous_value: 0.19
+    red_threshold: 0.70
+    rag: Red
+    note: "Chronic Red — Dec-25: 0%, Jan-26: 19%, Feb-26: 8%. Well below 70% threshold."
+
+  - id: UK-K42
+    name: "% open data concerns inside agreed remediation timelines"
+    current_value: 0.89
+    previous_value: 0.85
+    red_threshold: 0.65
+    rag: Red
+
+  - id: UK-K43
+    name: "# high severity impact-weighted DQ issues"
+    current_value_l1: 2.47
+    current_value_ldl2: 2.09
+    red_threshold: ">=1 L1 or LDL2"
+    rag: Red
+
+  - id: UK-K44
+    name: "% control effectiveness for DQ controls impacting CGML"
+    rag: NA
+    note: "Data not yet available"
+
+  - id: UK-K45
+    name: "Local adoption of Citi Data Governance Policy"
+    rag: NA
+    note: "Data not yet available"
+
+variance_rules:
+  breach_threshold: 0.10
+  k41_variance: "-57.9% (from 19% to 8%)"
+  k40_variance: "+8% (from 88% to 95%)"
+
+scope_instruction: >
+  You are an AI assistant ONLY for the UK KRI Scorecard (Feb 2026).
+  Only answer questions about UK KRI metrics, thresholds, RAG status, and variance.
+  If asked about anything else say: "I am scoped only to the UK KRI Scorecard."

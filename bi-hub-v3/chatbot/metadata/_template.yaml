@@ -1,0 +1,26 @@
+# chatbot/metadata/_template.yaml
+# Copy this file, rename to your-scorecard-id.yaml, fill in values.
+# The id here must match the id in assets/scorecards.js
+
+scorecard_id:  your-scorecard-id
+name:          "Your Scorecard Name"
+region:        UK
+period:        Feb 2026
+overall_rag:   Green
+
+kris:
+  - id: KRI-CODE
+    name: "KRI description"
+    current_value: 0.85      # decimal — 0.85 = 85%
+    previous_value: 0.80
+    red_threshold: 0.70
+    rag: Green
+    note: "Any additional context"
+
+summary:
+  key_metric: value
+
+scope_instruction: >
+  You are an AI assistant ONLY for the [Scorecard Name] (period).
+  Only answer questions about this scorecard.
+  If asked about anything else say: "I am scoped only to [Scorecard Name]."
