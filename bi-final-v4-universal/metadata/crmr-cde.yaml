@@ -1,0 +1,27 @@
+scorecard_id: crmr-cde
+name: CRMR CDE Exceptions Scorecard
+region: UK
+system: CRMR
+period: Feb 2026
+
+summary: {total_rules: 37, fail_total: 7, pass_new: 18, within_threshold: 12, fail_amber: 3, fail_red: 4, data_concerns: 0}
+dimensions: [Completeness, Accuracy]
+reports: [COREP Own Funds, Large Exposure]
+
+cdes:
+  - {name: Security Id, fail_count: 8, dimension: Completeness, rag: Red}
+  - {name: Currency Code, fail_count: 4, dimension: Completeness, rag: Red}
+  - {name: Product Classification, fail_count: 4, dimension: Completeness, rag: Red}
+  - {name: Market Value, fail_count: 1, dimension: Completeness, rag: Red}
+  - {name: Internal Party/Legal Entity Id, fail_count: 2, dimension: Completeness, rag: Amber}
+  - {name: Maturity Date, fail_count: 2, dimension: Completeness, rag: Amber}
+  - {name: Notional, fail_count: 2, dimension: Completeness, rag: Amber}
+  - {name: Risk Sensitivity, fail_count: 0, dimension: Completeness, rag: Green}
+  - {name: Trading Book/Banking Book, fail_count: 0, dimension: Completeness, rag: Green}
+
+trend_total_fails: [Sep-25=3, Oct-25=4, Nov-25=5, Dec-25=5, Jan-26=6, Feb-26=7]
+
+scope_instruction: >
+  You are an AI assistant ONLY for the CRMR CDE Exceptions Scorecard (Feb 2026).
+  Answer ONLY questions about this scorecard. If asked about others say:
+  "I am scoped only to the CRMR CDE Exceptions Scorecard."

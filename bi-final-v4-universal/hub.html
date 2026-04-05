@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>B&I Controls Hub — Enterprise</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.10.3/Recharts.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.4/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%;font-size:14px}
+body{font-family:'DM Sans',system-ui,sans-serif}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(99,102,241,.3);border-radius:4px}
+.fade-in{animation:fi .35s ease both}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.slide-in{animation:si .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes si{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.card-hover{transition:all .2s cubic-bezier(.4,0,.2,1)}
+.card-hover:hover{transform:translateY(-2px)}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.spin{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.count-up{animation:cu .5s ease}
+@keyframes cu{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+const {
+  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  PieChart: RePieChart, Pie, Cell,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer
+} = Recharts;
+
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════ */
+const THEMES = {
+  dark: {
+    bg:"#0A0E1A", surface:"#0F1629", card:"#141929", cardHover:"#1A2035",
+    border:"rgba(255,255,255,0.06)", borderHover:"rgba(99,102,241,0.4)",
+    text:"#F0F4FF", muted:"#6B7A99", sub:"#3D4B6E",
+    navBg:"#080D1A", topBg:"#0F1629", inputBg:"rgba(255,255,255,0.04)",
+    red:"#F43F5E", amber:"#F59E0B", green:"#10B981",
+    chartGrid:"rgba(255,255,255,0.04)"
+  },
+  light: {
+    bg:"#F4F6FB", surface:"#FFFFFF", card:"#FFFFFF", cardHover:"#F8FAFF",
+    border:"rgba(0,0,0,0.06)", borderHover:"rgba(99,102,241,0.4)",
+    text:"#111827", muted:"#6B7280", sub:"#9CA3AF",
+    navBg:"#1E1E2E", topBg:"#FFFFFF", inputBg:"rgba(0,0,0,0.04)",
+    red:"#EF4444", amber:"#D97706", green:"#059669",
+    chartGrid:"rgba(0,0,0,0.04)"
+  }
+};
+
+const VARIANTS = [
+  {name:"Indigo", accent:"#6366F1", second:"#22D3EE"},
+  {name:"Violet", accent:"#8B5CF6", second:"#F59E0B"},
+  {name:"Cyan",   accent:"#06B6D4", second:"#6366F1"},
+  {name:"Rose",   accent:"#F43F5E", second:"#6366F1"},
+];
+
+const API = "http://localhost:8000";
+
+/* ═══════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════ */
+const LEGAL_ENTITIES = [
+  { id:"CGML", name:"Citigroup Global Markets Ltd", region:"United Kingdom",
+    color:"#6366F1", count:5,
+    scorecards:[
+      {id:"crmr-cde", icon:"📊", rag:"amber", name:"CRMR CDE Exceptions",     desc:"CDE Data Quality · UK-K11",        region:"UK",  kri:"UK-K11", value:"7 Fail",  delta:"+2",    trend:"up",   view_id:"", url:"#"},
+      {id:"uk-kri",   icon:"🎯", rag:"red",   name:"UK KRI Scorecard",          desc:"UK-K40 · K41 · K42 · K43",         region:"UK",  kri:"UK-K41", value:"8%",      delta:"-57.9%",trend:"down", view_id:"", url:"#"},
+      {id:"kri-dash", icon:"📈", rag:"amber", name:"KRI Dashboard",             desc:"Overall 82.35% · 34 Rules",        region:"UK",  kri:"UK-K11", value:"82.35%",  delta:"-1.4%", trend:"down", view_id:"", url:"#"},
+      {id:"dcrm",     icon:"🔍", rag:"na",    name:"DCRM Details",              desc:"CDE Rules by DCRM",                region:"UK",  kri:"DCRM",   value:"9 CDEs",  delta:"0",     trend:"flat", view_id:"", url:"#"},
+      {id:"it-audit", icon:"🛡️", rag:"na",    name:"IT Audit Controls",         desc:"7 Codified Controls · WS2",        region:"UK",  kri:"WS2",    value:"7 Active",delta:"0",     trend:"flat", view_id:"", url:"#"},
+    ]
+  },
+  { id:"CGMSE", name:"Citigroup Global Markets SE", region:"Singapore",
+    color:"#10B981", count:1,
+    scorecards:[
+      {id:"sgp-dq", icon:"🌏", rag:"green", name:"SGP DQ Scorecard", desc:"Singapore Data Quality", region:"SGP", kri:"SGP-K1", value:"94.2%", delta:"+1.2%", trend:"up", view_id:"", url:"#"}
+    ]
+  },
+  { id:"CGME", name:"Citigroup Global Markets Europe", region:"CEP Region",
+    color:"#22D3EE", count:1,
+    scorecards:[
+      {id:"cep", icon:"🏦", rag:"green", name:"CEP Scorecard", desc:"Central Eastern Europe & Poland", region:"CEP", kri:"CEP-K1", value:"91.8%", delta:"+0.6%", trend:"up", view_id:"", url:"#"}
+    ]
+  },
+  { id:"ALL", name:"Cross-Entity", region:"All Regions",
+    color:"#8B5CF6", count:1,
+    scorecards:[
+      {id:"bi-vault", icon:"🗄️", rag:"na", name:"BI Vault", desc:"Evidence Store · All Controls", region:"ALL", kri:"VAULT", value:"142 Items", delta:"+8", trend:"up", view_id:"", url:"#"}
+    ]
+  }
+];
+
+const KRI_TREND = [
+  {m:"Mar",k40:88,k41:35,k42:80,thr:70},{m:"Apr",k40:89,k41:29,k42:81,thr:70},
+  {m:"May",k40:90,k41:22,k42:82,thr:70},{m:"Jun",k40:91,k41:17,k42:83,thr:70},
+  {m:"Jul",k40:91,k41:14,k42:84,thr:70},{m:"Aug",k40:92,k41:10,k42:85,thr:70},
+  {m:"Sep",k40:92,k41:8, k42:85,thr:70},{m:"Oct",k40:93,k41:11,k42:86,thr:70},
+  {m:"Nov",k40:93,k41:14,k42:86,thr:70},{m:"Dec",k40:94,k41:0, k42:87,thr:70},
+  {m:"Jan",k40:94,k41:19,k42:88,thr:70},{m:"Feb",k40:95,k41:8, k42:89,thr:70},
+];
+const RADAR_DATA = [
+  {s:"Completeness",CGML:72,CGMSE:95,CGME:92},{s:"Accuracy",CGML:88,CGMSE:97,CGME:94},
+  {s:"Timeliness",  CGML:35,CGMSE:99,CGME:91},{s:"Consistency",CGML:81,CGMSE:93,CGME:89},
+  {s:"Validity",    CGML:90,CGMSE:96,CGME:93},
+];
+const STACKED = [
+  {m:"Sep",pass:29,amber:4,red:4},{m:"Oct",pass:28,amber:5,red:4},
+  {m:"Nov",pass:27,amber:5,red:5},{m:"Dec",pass:27,amber:5,red:5},
+  {m:"Jan",pass:26,amber:5,red:6},{m:"Feb",pass:26,amber:4,red:7},
+];
+const DONUT_DATA = [
+  {name:"Security Id",fail:8,color:"#F43F5E"},{name:"Currency",fail:4,color:"#F59E0B"},
+  {name:"Product",fail:4,color:"#6366F1"},{name:"Market Val",fail:1,color:"#22D3EE"},
+  {name:"Others",fail:6,color:"#8B5CF6"},
+];
+const HIST = [
+  {sc:"UK KRI Scorecard",sid:"a3f8b12c",time:"Today 15:32",msgs:8,rag:"red",entity:"CGML"},
+  {sc:"CRMR CDE Exceptions",sid:"7d2e904a",time:"Today 11:14",msgs:5,rag:"amber",entity:"CGML"},
+  {sc:"KRI Dashboard",sid:"c91f3b77",time:"Yesterday 16:45",msgs:12,rag:"amber",entity:"CGML"},
+  {sc:"SGP DQ Scorecard",sid:"552da011",time:"27 Mar 2026",msgs:3,rag:"green",entity:"CGMSE"},
+];
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function cc(...parts){return parts.filter(Boolean).join(" ")}
+function ragColor(rag,T){ return rag==="red"?T.red:rag==="amber"?T.amber:rag==="green"?T.green:T.muted }
+function ragBg(rag){ return rag==="red"?"rgba(244,63,94,.12)":rag==="amber"?"rgba(245,158,11,.12)":rag==="green"?"rgba(16,185,129,.12)":"rgba(107,122,153,.12)" }
+
+/* ═══════════════════════════════════════════════
+   ICON PLACEHOLDERS (inline SVG — no lucide needed)
+═══════════════════════════════════════════════ */
+const Ico = ({d,size=16,stroke=2,color="currentColor"}) => (
+  <svg width={size} height={size} fill="none" stroke={color} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={stroke} d={d}/>
+  </svg>
+);
+const I = {
+  dash:"M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z",
+  bar:"M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
+  msg:"M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z",
+  sun:"M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z",
+  moon:"M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z",
+  bell:"M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9",
+  search:"M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
+  x:"M6 18L18 6M6 6l12 12",
+  eye:"M15 12a3 3 0 11-6 0 3 3 0 016 0zm-3-9a9 9 0 00-7.732 13.54M21 12a9 9 0 01-9 9",
+  bot:"M12 2a2 2 0 012 2v1h3a1 1 0 011 1v2a1 1 0 01-1 1h-1v1a4 4 0 01-4 4H8a4 4 0 01-4-4v-1H3a1 1 0 01-1-1V6a1 1 0 011-1h3V4a2 2 0 012-2h4zm-2 5H8v2h2V7zm4 0h-2v2h2V7z",
+  send:"M12 19l9 2-9-18-9 18 9-2zm0 0v-8",
+  up:"M5 10l7-7m0 0l7 7m-7-7v18",
+  down:"M19 14l-7 7m0 0l-7-7m7 7V3",
+  chevD:"M19 9l-7 7-7-7",
+  chevR:"M9 5l7 7-7 7",
+  chevL:"M15 19l-7-7 7-7",
+  layer:"M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  globe:"M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064",
+  bldg:"M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0H5m-2 0h2",
+  spark:"M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z",
+  filter:"M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z",
+  plug:"M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125",
+};
+
+/* ═══════════════════════════════════════════════
+   MAIN APP
+═══════════════════════════════════════════════ */
+function App(){
+  const [theme,setTheme] = useState("dark");
+  const [tab,setTab]     = useState("hub");
+  const [variant,setVariant] = useState(0);
+  const [search,setSearch]   = useState("");
+  const [ragFilter,setRagFilter] = useState("all");
+  const [collapsed,setCollapsed] = useState({});
+  const [drillCard,setDrillCard] = useState(null);
+  const [chatOpen,setChatOpen]   = useState(false);
+  const [chatSC,setChatSC]       = useState(null);
+  const [chatMsgs,setChatMsgs]   = useState([]);
+  const [chatIn,setChatIn]       = useState("");
+  const [chartPref,setChartPref] = useState("auto");
+  const [sidebar,setSidebar]     = useState(true);
+  const [health,setHealth]       = useState({});
+  const [sending,setSending]     = useState(false);
+
+  const T  = THEMES[theme];
+  const AC = VARIANTS[variant].accent;
+  const SC = VARIANTS[variant].second;
+
+  // Health check on mount
+  useEffect(()=>{
+    fetch(`${API}/health/`).then(r=>r.json()).then(d=>{
+      const h={};
+      (d.services||[]).forEach(s=>{ h[s.name.toLowerCase().replace(/\s/,"")]=s.status; });
+      setHealth(h);
+    }).catch(()=>{});
+  },[]);
+
+  const allSC = LEGAL_ENTITIES.flatMap(e=>e.scorecards);
+  const filtered = allSC.filter(s=>{
+    const q=search.toLowerCase();
+    return (!q||s.name.toLowerCase().includes(q)||s.id.includes(q))
+        && (ragFilter==="all"||s.rag===ragFilter);
+  });
+  const redCnt   = allSC.filter(s=>s.rag==="red").length;
+  const amberCnt = allSC.filter(s=>s.rag==="amber").length;
+  const greenCnt = allSC.filter(s=>s.rag==="green").length;
+
+  function openChat(sc){
+    setChatSC(sc); setChatOpen(true);
+    setChatMsgs([{role:"ai",text:`I'm scoped to **${sc.name}**. Ask me anything.`,
+      chips:["Which KRIs are Red?","Show trend for UK-K41","RAG distribution","Summary"]}]);
+  }
+
+  async function sendChat(){
+    if(!chatIn.trim()||sending) return;
+    const q = chatIn.trim();
+    setChatMsgs(m=>[...m,{role:"user",text:q}]);
+    setChatIn(""); setSending(true);
+    try{
+      const res = await fetch(`${API}/query/${chatSC?.id||"uk-kri"}`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({question:q})
+      });
+      const d = await res.json();
+      setChatMsgs(m=>[...m,{role:"ai",text:d.reply||d.answer||"Done.",chart:d.chart}]);
+    }catch(e){
+      setChatMsgs(m=>[...m,{role:"ai",text:`Backend offline. Try: uvicorn main:app --port 8000`,error:true}]);
+    }
+    setSending(false);
+  }
+
+  function toggleCollapse(id){ setCollapsed(p=>({...p,[id]:!p[id]})); }
+
+  /* ── Shared button style ── */
+  function btn(extra={}){ return {
+    display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:8,
+    border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
+    transition:"all .15s",...extra
+  };}
+
+  /* ── Card styles ── */
+  const cardBase = {
+    background:T.card, border:`1px solid ${T.border}`,
+    borderRadius:12, transition:"all .2s cubic-bezier(.4,0,.2,1)",
+    boxShadow: theme==="dark"?"0 4px 24px rgba(0,0,0,.3)":"0 2px 12px rgba(0,0,0,.06)"
+  };
+
+  /* ══════════════════════════════════════════════
+     RENDER
+  ══════════════════════════════════════════════ */
+  return (
+    <div style={{minHeight:"100vh",background:T.bg,color:T.text,
+                 fontFamily:"'DM Sans',system-ui,sans-serif",
+                 display:"flex",flexDirection:"column",overflow:"hidden",
+                 transition:"background .3s,color .3s"}}>
+
+      {/* ── TOP BAR ── */}
+      <header style={{height:52,background:T.topBg,borderBottom:`1px solid ${T.border}`,
+                      display:"flex",alignItems:"center",padding:"0 20px",gap:16,
+                      flexShrink:0,boxShadow:theme==="dark"?"0 1px 0 rgba(255,255,255,.03)":"0 1px 4px rgba(0,0,0,.06)",
+                      zIndex:100}}>
+
+        <button onClick={()=>setSidebar(p=>!p)}
+          style={{background:"none",border:"none",color:T.muted,cursor:"pointer",padding:4}}>
+          <Ico d={I.dash} size={18}/>
+        </button>
+
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,${AC},${SC})`,
+                       display:"grid",placeItems:"center",fontSize:14}}>✦</div>
+          <span style={{fontWeight:700,fontSize:14,letterSpacing:"-.3px"}}>B&I Controls Hub</span>
+          <span style={{fontSize:9,fontWeight:700,padding:"2px 7px",
+                        background:`${AC}20`,color:AC,borderRadius:4,letterSpacing:.5}}>ENTERPRISE</span>
+        </div>
+
+        {/* Search */}
+        <div style={{flex:1,maxWidth:340,marginLeft:24}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,
+                       background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 12px"}}>
+            <Ico d={I.search} size={13} color={T.muted}/>
+            <input value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="Search scorecards, entities, KRIs…"
+              style={{background:"none",border:"none",outline:"none",color:T.text,fontSize:13,flex:1,fontFamily:"inherit"}}/>
+            {search && <button onClick={()=>setSearch("")} style={{background:"none",border:"none",cursor:"pointer",color:T.muted}}>
+              <Ico d={I.x} size={12}/>
+            </button>}
+          </div>
+        </div>
+
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+          {/* Health dots */}
+          <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 8px",
+                       background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8}}>
+            {[["tableau","T"],["vertexai","AI"],["oracle","DB"]].map(([k,lbl])=>(
+              <span key={k} title={`${k}: ${health[k]||"unknown"}`}
+                style={{display:"flex",alignItems:"center",gap:3,fontSize:9,color:T.muted}}>
+                <span style={{width:7,height:7,borderRadius:"50%",background:
+                  health[k]==="ok"?"#10B981":health[k]==="down"?"#F43F5E":"#6B7A99"}}/>
+                {lbl}
+              </span>
+            ))}
+          </div>
+
+          {/* Variant picker */}
+          <div style={{display:"flex",gap:4,padding:"5px 8px",background:T.inputBg,
+                       border:`1px solid ${T.border}`,borderRadius:8}}>
+            {VARIANTS.map((v,i)=>(
+              <button key={v.name} onClick={()=>setVariant(i)}
+                style={{width:14,height:14,borderRadius:"50%",background:v.accent,border:"none",
+                        cursor:"pointer",outline:variant===i?`2px solid ${v.accent}`:"2px solid transparent",
+                        outlineOffset:2}} title={v.name}/>
+            ))}
+          </div>
+
+          <button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")}
+            style={{...btn({background:T.inputBg,border:`1px solid ${T.border}`,color:T.muted}),width:34,height:34,padding:0,justifyContent:"center"}}>
+            <Ico d={theme==="dark"?I.sun:I.moon} size={15}/>
+          </button>
+
+          <button style={{...btn({background:T.inputBg,border:`1px solid ${T.border}`,color:T.muted}),width:34,height:34,padding:0,justifyContent:"center",position:"relative"}}>
+            <Ico d={I.bell} size={15}/>
+            <span style={{position:"absolute",top:6,right:6,width:6,height:6,borderRadius:"50%",background:"#F43F5E"}}/>
+          </button>
+
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 10px 4px 4px",
+                       background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8}}>
+            <div style={{width:28,height:28,borderRadius:6,background:`linear-gradient(135deg,${AC},${SC})`,
+                         display:"grid",placeItems:"center",fontSize:11,fontWeight:700,color:"#fff"}}>PG</div>
+            <span style={{fontSize:12,fontWeight:500}}>Prathmesh</span>
+          </div>
+        </div>
+      </header>
+
+      <div style={{display:"flex",flex:1,overflow:"hidden"}}>
+
+        {/* ── SIDEBAR ── */}
+        <div style={{width:sidebar?210:0,background:T.navBg,borderRight:`1px solid ${T.border}`,
+                     display:"flex",flexDirection:"column",flexShrink:0,overflow:"hidden",
+                     transition:"width .25s cubic-bezier(.4,0,.2,1)"}}>
+          <div style={{padding:"20px 12px",display:"flex",flexDirection:"column",gap:2,whiteSpace:"nowrap"}}>
+
+            {/* Nav items */}
+            {[{id:"hub",icon:I.dash,label:"Scorecards"},
+              {id:"analytics",icon:I.bar,label:"Analytics"},
+              {id:"history",icon:I.msg,label:"Chat History"}].map(item=>(
+              <button key={item.id} onClick={()=>setTab(item.id)}
+                style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:8,
+                        border:"none",cursor:"pointer",fontSize:13,textAlign:"left",width:"100%",
+                        background:tab===item.id?`${AC}20`:"none",
+                        color:tab===item.id?AC:"#8BAAC8",fontWeight:tab===item.id?600:400,
+                        boxShadow:tab===item.id?`inset 0 0 0 1px ${AC}30`:"none",
+                        fontFamily:"inherit",transition:"all .15s"}}>
+                <Ico d={item.icon} size={15} color={tab===item.id?AC:"#8BAAC8"}/>
+                <span>{item.label}</span>
+              </button>
+            ))}
+
+            <div style={{height:1,background:T.border,margin:"12px 4px"}}/>
+            <div style={{padding:"0 4px 8px",fontSize:10,fontWeight:700,color:"#3D5A7A",letterSpacing:1}}>LEGAL ENTITIES</div>
+
+            {LEGAL_ENTITIES.map(e=>(
+              <button key={e.id} onClick={()=>{setTab("hub");setSearch("");setRagFilter("all");}}
+                style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",borderRadius:8,
+                        border:"none",cursor:"pointer",background:"none",color:"#8BAAC8",
+                        fontSize:12,textAlign:"left",width:"100%",fontFamily:"inherit"}}>
+                <span style={{width:8,height:8,borderRadius:"50%",background:e.color,flexShrink:0}}/>
+                <span style={{flex:1}}>{e.id}</span>
+                <span style={{fontSize:10,padding:"1px 5px",borderRadius:4,
+                              background:`${e.color}20`,color:e.color,fontWeight:600}}>{e.count}</span>
+              </button>
+            ))}
+
+            <div style={{height:1,background:T.border,margin:"12px 4px"}}/>
+            <a href="connect.html" style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",
+                borderRadius:8,textDecoration:"none",fontSize:13,color:AC,fontWeight:600,
+                background:`${AC}10`,border:`1px solid ${AC}20`}}>
+              <Ico d={I.plug} size={15} color={AC}/>
+              <span>Connect Dashboard</span>
+            </a>
+          </div>
+
+          <div style={{marginTop:"auto",padding:"14px 12px",borderTop:`1px solid ${T.border}`,
+                       fontSize:11,color:"#3D5A7A",lineHeight:1.8}}>
+            Workstream 2<br/>Controls Codification<br/>
+            <span style={{color:AC}}>v3.0.0 Enterprise</span>
+          </div>
+        </div>
+
+        {/* ── MAIN ── */}
+        <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+
+          {/* Tab bar */}
+          <div style={{background:T.topBg,borderBottom:`1px solid ${T.border}`,
+                       display:"flex",alignItems:"center",padding:"0 24px",gap:2,flexShrink:0}}>
+            {[{id:"hub",icon:I.dash,label:"Scorecards"},
+              {id:"analytics",icon:I.bar,label:"Analytics"},
+              {id:"history",icon:I.msg,label:"Chat History"}].map(t=>(
+              <button key={t.id} onClick={()=>setTab(t.id)}
+                style={{display:"flex",alignItems:"center",gap:6,padding:"14px 16px",
+                        border:"none",background:"none",cursor:"pointer",fontSize:13,
+                        color:tab===t.id?AC:T.muted,fontWeight:tab===t.id?600:400,
+                        borderBottom:tab===t.id?`2px solid ${AC}`:"2px solid transparent",
+                        marginBottom:-1,transition:"all .15s",fontFamily:"inherit"}}>
+                <Ico d={t.icon} size={14} color={tab===t.id?AC:T.muted}/>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{flex:1,overflow:"auto",padding:24}}>
+
+            {/* ═══ SCORECARDS TAB ═══ */}
+            {tab==="hub" && (
+              <div className="fade-in">
+                <div style={{marginBottom:24}}>
+                  <div style={{fontSize:11,color:T.muted,marginBottom:6,display:"flex",alignItems:"center",gap:6}}>
+                    <span>Home</span><Ico d={I.chevR} size={10}/><span style={{color:AC}}>Data Control</span>
+                  </div>
+                  <h1 style={{fontSize:24,fontWeight:700,letterSpacing:"-.5px",margin:0}}>Data Control</h1>
+                  <p style={{fontSize:13,color:T.muted,margin:"4px 0 0"}}>Grouped by legal entity · Click Preview or Chat</p>
+                </div>
+
+                {/* KPI tiles */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:24}}>
+                  {[{label:"Total Scorecards",value:"8",color:AC,sub:"Across 3 entities"},
+                    {label:"RAG Red",  value:String(redCnt),  color:T.red,  sub:"Immediate attention"},
+                    {label:"RAG Amber",value:String(amberCnt),color:T.amber,sub:"Monitor closely"},
+                    {label:"RAG Green",value:String(greenCnt),color:T.green,sub:"Within thresholds"}
+                  ].map(k=>(
+                    <div key={k.label} className="card-hover"
+                      style={{...cardBase,padding:"16px 18px",borderTop:`3px solid ${k.color}`,cursor:"pointer"}}>
+                      <div style={{fontSize:11,fontWeight:600,color:T.muted,textTransform:"uppercase",letterSpacing:.6,marginBottom:10}}>{k.label}</div>
+                      <div className="count-up" style={{fontSize:34,fontWeight:800,color:k.color,lineHeight:1,letterSpacing:"-1px"}}>{k.value}</div>
+                      <div style={{fontSize:11,color:T.muted,marginTop:6}}>{k.sub}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Filters */}
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+                  <Ico d={I.filter} size={13} color={T.muted}/>
+                  {["all","red","amber","green"].map(f=>(
+                    <button key={f} onClick={()=>setRagFilter(f)}
+                      style={{padding:"5px 14px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:600,
+                              fontFamily:"inherit",transition:"all .2s",
+                              background:ragFilter===f?(f==="all"?AC:f==="red"?T.red:f==="amber"?T.amber:T.green):T.inputBg,
+                              color:ragFilter===f?"#fff":T.muted,
+                              boxShadow:ragFilter===f?`0 4px 12px ${f==="all"?AC:f==="red"?T.red:f==="amber"?T.amber:T.green}40`:"none"}}>
+                      {f==="all"?"All":f==="red"?"🔴 Red":f==="amber"?"🟡 Amber":"🟢 Green"}
+                    </button>
+                  ))}
+                  <a href="connect.html"
+                    style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",gap:6,
+                            padding:"6px 14px",borderRadius:8,background:`${AC}15`,
+                            border:`1px solid ${AC}30`,color:AC,fontSize:12,fontWeight:600,textDecoration:"none"}}>
+                    🔌 Connect New Dashboard
+                  </a>
+                </div>
+
+                {/* Legal entity sections */}
+                {LEGAL_ENTITIES.map(entity=>{
+                  const entitySC = entity.scorecards.filter(sc=>{
+                    const q=search.toLowerCase();
+                    return(!q||sc.name.toLowerCase().includes(q)||sc.id.includes(q))
+                        &&(ragFilter==="all"||sc.rag===ragFilter);
+                  });
+                  if(entitySC.length===0&&(search||ragFilter!=="all")) return null;
+                  return (
+                    <div key={entity.id} style={{marginBottom:28}}>
+                      {/* Entity header */}
+                      <div onClick={()=>toggleCollapse(entity.id)}
+                        style={{display:"flex",alignItems:"center",gap:12,marginBottom:14,
+                                cursor:"pointer",padding:"10px 14px",background:T.card,
+                                borderRadius:10,border:`1px solid ${T.border}`,
+                                boxShadow:theme==="dark"?"0 2px 8px rgba(0,0,0,.2)":"0 2px 8px rgba(0,0,0,.04)"}}>
+                        <div style={{width:36,height:36,borderRadius:8,flexShrink:0,
+                                     background:`${entity.color}20`,border:`1px solid ${entity.color}30`,
+                                     display:"grid",placeItems:"center",fontSize:16}}>
+                          {entity.id==="CGML"?"🏛️":entity.id==="CGMSE"?"🌏":entity.id==="CGME"?"🏦":"🗄️"}
+                        </div>
+                        <div style={{flex:1}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10}}>
+                            <span style={{fontSize:13,fontWeight:700,color:entity.color,fontFamily:"'DM Mono',monospace",letterSpacing:.5}}>{entity.id}</span>
+                            <span style={{fontSize:12,color:T.muted}}>{entity.name}</span>
+                            <span style={{fontSize:10,padding:"2px 8px",borderRadius:4,
+                                          background:`${entity.color}15`,color:entity.color,fontWeight:600}}>{entity.region}</span>
+                          </div>
+                        </div>
+                        <span style={{fontSize:11,color:T.muted,marginRight:8}}>{entitySC.length} scorecard{entitySC.length!==1?"s":""}</span>
+                        <div style={{color:T.muted,transform:collapsed[entity.id]?"rotate(-90deg)":"none",transition:"transform .2s"}}>
+                          <Ico d={I.chevD} size={16}/>
+                        </div>
+                      </div>
+
+                      {/* Scorecard cards */}
+                      {!collapsed[entity.id] && (
+                        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:14}}>
+                          {entitySC.map((sc,i)=>(
+                            <ScorecardCard key={sc.id} sc={sc} T={T} AC={AC} theme={theme}
+                              onPreview={()=>setDrillCard(sc)} onChat={()=>openChat(sc)}
+                              index={i}/>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ═══ ANALYTICS TAB ═══ */}
+            {tab==="analytics" && (
+              <div className="fade-in">
+                <div style={{marginBottom:24}}>
+                  <h1 style={{fontSize:24,fontWeight:700,letterSpacing:"-.5px",margin:0}}>Analytics</h1>
+                  <p style={{fontSize:13,color:T.muted,margin:"4px 0 0"}}>KRI performance & usage across all legal entities</p>
+                </div>
+
+                {/* Stats */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:24}}>
+                  {[{label:"Sessions",value:"47",delta:"+12%",color:AC},
+                    {label:"AI Messages",value:"213",delta:"+24%",color:SC},
+                    {label:"Avg Response",value:"1.2s",delta:"-18%",color:T.green},
+                    {label:"Active Users",value:"6",delta:"+2",color:T.amber}].map(s=>(
+                    <div key={s.label} className="card-hover"
+                      style={{...cardBase,padding:16}}>
+                      <div style={{fontSize:11,fontWeight:600,color:T.muted,textTransform:"uppercase",letterSpacing:.6,marginBottom:10}}>{s.label}</div>
+                      <div style={{fontSize:30,fontWeight:800,color:s.color,letterSpacing:"-1px"}}>{s.value}</div>
+                      <div style={{fontSize:11,color:s.delta.startsWith("+")?"#10B981":"#F43F5E",marginTop:6,display:"flex",alignItems:"center",gap:3}}>
+                        <Ico d={s.delta.startsWith("+")?I.up:I.down} size={11} color={s.delta.startsWith("+")?"#10B981":"#F43F5E"}/>
+                        {s.delta} this month
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Charts grid */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+                  {/* KRI Trend */}
+                  <ChartCard title="UK KRI 12-Month Trend" sub="K40 · K41 · K42 vs 70% threshold" T={T} AC={AC}>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <AreaChart data={KRI_TREND} margin={{top:10,right:10,left:-20,bottom:0}}>
+                        <defs>
+                          <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={AC} stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor={AC} stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#F43F5E" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={T.chartGrid}/>
+                        <XAxis dataKey="m" tick={{fill:T.muted,fontSize:10}} axisLine={false} tickLine={false}/>
+                        <YAxis tick={{fill:T.muted,fontSize:10}} axisLine={false} tickLine={false}/>
+                        <Tooltip contentStyle={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12}}/>
+                        <Legend iconType="circle" iconSize={8} wrapperStyle={{fontSize:11}}/>
+                        <Area type="monotone" dataKey="k40" name="UK-K40" stroke={AC} fill="url(#g1)" strokeWidth={2} dot={false}/>
+                        <Area type="monotone" dataKey="k41" name="UK-K41" stroke="#F43F5E" fill="url(#g2)" strokeWidth={2} dot={false}/>
+                        <Line type="monotone" dataKey="k42" name="UK-K42" stroke="#F59E0B" strokeWidth={2} dot={false}/>
+                        <Line type="monotone" dataKey="thr" name="Threshold" stroke="#6B7A99" strokeDasharray="5 5" strokeWidth={1.5} dot={false}/>
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+
+                  {/* Radar */}
+                  <ChartCard title="Data Quality Radar" sub="CGML · CGMSE · CGME" T={T} AC={AC}>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <RadarChart data={RADAR_DATA}>
+                        <PolarGrid stroke={T.chartGrid}/>
+                        <PolarAngleAxis dataKey="s" tick={{fill:T.muted,fontSize:10}}/>
+                        <Radar name="CGML"  dataKey="CGML"  stroke="#F43F5E" fill="#F43F5E" fillOpacity={0.12} strokeWidth={2}/>
+                        <Radar name="CGMSE" dataKey="CGMSE" stroke="#10B981" fill="#10B981" fillOpacity={0.12} strokeWidth={2}/>
+                        <Radar name="CGME"  dataKey="CGME"  stroke={SC}      fill={SC}      fillOpacity={0.12} strokeWidth={2}/>
+                        <Legend iconType="circle" iconSize={8} wrapperStyle={{fontSize:11}}/>
+                        <Tooltip contentStyle={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12}}/>
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+                </div>
+
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+                  {/* Stacked Bar */}
+                  <ChartCard title="CDE Rule Status Trend" sub="Pass · Amber · Red over 6 months" T={T} AC={AC}>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={STACKED} margin={{top:10,right:10,left:-20,bottom:0}}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={T.chartGrid} vertical={false}/>
+                        <XAxis dataKey="m" tick={{fill:T.muted,fontSize:10}} axisLine={false} tickLine={false}/>
+                        <YAxis tick={{fill:T.muted,fontSize:10}} axisLine={false} tickLine={false}/>
+                        <Tooltip contentStyle={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12}}/>
+                        <Legend iconType="circle" iconSize={8} wrapperStyle={{fontSize:11}}/>
+                        <Bar dataKey="pass"  name="Pass"  stackId="a" fill="#10B981"/>
+                        <Bar dataKey="amber" name="Amber" stackId="a" fill="#F59E0B"/>
+                        <Bar dataKey="red"   name="Red"   stackId="a" fill="#F43F5E" radius={[4,4,0,0]}/>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+
+                  {/* Donut */}
+                  <ChartCard title="CDE Failure Distribution" sub="By attribute · Feb 2026" T={T} AC={AC}>
+                    <div style={{display:"flex",alignItems:"center",gap:16}}>
+                      <ResponsiveContainer width={160} height={160}>
+                        <RePieChart>
+                          <Pie data={DONUT_DATA} dataKey="fail" nameKey="name" cx="50%" cy="50%"
+                            innerRadius={45} outerRadius={70} strokeWidth={2} stroke={T.card} paddingAngle={3}>
+                            {DONUT_DATA.map((e,i)=><Cell key={i} fill={e.color}/>)}
+                          </Pie>
+                          <Tooltip contentStyle={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12}}/>
+                        </RePieChart>
+                      </ResponsiveContainer>
+                      <div style={{flex:1}}>
+                        {DONUT_DATA.map((d,i)=>(
+                          <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                            <span style={{width:8,height:8,borderRadius:"50%",background:d.color,flexShrink:0}}/>
+                            <span style={{fontSize:11,color:T.text,flex:1}}>{d.name}</span>
+                            <span style={{fontSize:11,fontWeight:700,color:d.color,fontFamily:"'DM Mono',monospace"}}>{d.fail}</span>
+                          </div>
+                        ))}
+                        <div style={{marginTop:10,paddingTop:8,borderTop:`1px solid ${T.border}`}}>
+                          <span style={{fontSize:11,color:T.muted}}>Total: </span>
+                          <span style={{fontSize:13,fontWeight:700,color:"#F43F5E"}}>23</span>
+                        </div>
+                      </div>
+                    </div>
+                  </ChartCard>
+                </div>
+              </div>
+            )}
+
+            {/* ═══ HISTORY TAB ═══ */}
+            {tab==="history" && (
+              <div className="fade-in">
+                <div style={{marginBottom:24}}>
+                  <h1 style={{fontSize:24,fontWeight:700,letterSpacing:"-.5px",margin:0}}>Chat History</h1>
+                  <p style={{fontSize:13,color:T.muted,margin:"4px 0 0"}}>Your AI conversations — stored in Oracle DB</p>
+                </div>
+                {HIST.map((s,i)=>(
+                  <div key={i} className="card-hover"
+                    style={{...cardBase,padding:"14px 18px",marginBottom:10,cursor:"pointer",
+                            display:"flex",alignItems:"center",gap:14}}>
+                    <div style={{width:40,height:40,borderRadius:10,flexShrink:0,
+                                 background:`${AC}20`,display:"grid",placeItems:"center"}}>
+                      <Ico d={I.msg} size={16} color={AC}/>
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,fontWeight:600}}>{s.sc}</div>
+                      <div style={{fontSize:11,color:T.muted,marginTop:2,fontFamily:"'DM Mono',monospace"}}>
+                        {s.time} · {s.sid}… · {s.entity}
+                      </div>
+                    </div>
+                    <div style={{fontSize:10,padding:"3px 10px",borderRadius:20,fontWeight:700,
+                                 background:ragBg(s.rag),color:ragColor(s.rag,T)}}>
+                      {s.rag.toUpperCase()}
+                    </div>
+                    <div style={{fontSize:11,fontWeight:700,padding:"4px 12px",borderRadius:20,
+                                 background:`${AC}15`,color:AC,fontFamily:"'DM Mono',monospace"}}>
+                      {s.msgs} msgs
+                    </div>
+                    <Ico d={I.chevR} size={14} color={T.muted}/>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* ═══ DRILL-DOWN MODAL ═══ */}
+      {drillCard && (
+        <div onClick={e=>{if(e.target===e.currentTarget)setDrillCard(null)}}
+          style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(0,0,0,.75)",
+                  backdropFilter:"blur(8px)",display:"flex",alignItems:"center",
+                  justifyContent:"center",padding:20}}>
+          <div className="fade-in"
+            style={{width:"100%",maxWidth:860,background:T.card,borderRadius:16,
+                    border:`1px solid ${T.border}`,overflow:"hidden",
+                    boxShadow:`0 32px 80px rgba(0,0,0,.5)`}}>
+            <div style={{padding:"20px 24px",borderBottom:`1px solid ${T.border}`,
+                         background:`linear-gradient(135deg,${AC}15,${SC}08)`,
+                         display:"flex",alignItems:"center",gap:14}}>
+              <span style={{fontSize:28}}>{drillCard.icon}</span>
+              <div style={{flex:1}}>
+                <h2 style={{margin:0,fontSize:18,fontWeight:700}}>{drillCard.name}</h2>
+                <div style={{fontSize:12,color:T.muted,marginTop:3}}>{drillCard.desc}</div>
+              </div>
+              <span style={{fontSize:11,padding:"4px 12px",borderRadius:20,fontWeight:700,
+                            background:ragBg(drillCard.rag),color:ragColor(drillCard.rag,T)}}>
+                {drillCard.rag.toUpperCase()}
+              </span>
+              <button onClick={()=>setDrillCard(null)}
+                style={{width:34,height:34,borderRadius:8,border:"none",background:T.inputBg,cursor:"pointer",
+                        color:T.muted,display:"grid",placeItems:"center"}}>
+                <Ico d={I.x} size={16}/>
+              </button>
+            </div>
+            <div style={{padding:24}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
+                {[{l:"Current Value",v:drillCard.value,c:AC},
+                  {l:"Month Delta",v:drillCard.delta,c:drillCard.delta.includes("-")?"#F43F5E":"#10B981"},
+                  {l:"KRI Reference",v:drillCard.kri,c:T.text},
+                  {l:"Region",v:drillCard.region,c:T.text}].map(k=>(
+                  <div key={k.l} style={{background:T.surface,borderRadius:10,padding:"14px 16px",border:`1px solid ${T.border}`}}>
+                    <div style={{fontSize:10,fontWeight:600,color:T.muted,textTransform:"uppercase",letterSpacing:.6,marginBottom:8}}>{k.l}</div>
+                    <div style={{fontSize:22,fontWeight:800,color:k.c,fontFamily:"'DM Mono',monospace"}}>{k.v}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Tableau placeholder */}
+              <div style={{background:T.surface,borderRadius:10,border:`1px dashed ${T.border}`,
+                           padding:36,textAlign:"center",marginBottom:16}}>
+                <div style={{fontSize:32,marginBottom:10}}>📊</div>
+                <div style={{fontSize:13,fontWeight:600,color:T.muted,marginBottom:6}}>Tableau Snapshot</div>
+                <div style={{fontSize:12,color:T.sub}}>
+                  Fetched via <code style={{color:AC,fontFamily:"'DM Mono',monospace"}}>GET /snapshot/{drillCard.id}</code>
+                </div>
+                <div style={{marginTop:14,display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+                  {[["↻ Refresh",T.inputBg,T.muted],["⬇ PDF",T.inputBg,T.muted]].map(([l,bg,c])=>(
+                    <button key={l} style={{...btn({background:bg,color:c,border:`1px solid ${T.border}`,fontSize:12})}}>{l}</button>
+                  ))}
+                  <button onClick={()=>{setDrillCard(null);openChat(drillCard);}}
+                    style={{...btn({background:AC,color:"#fff",boxShadow:`0 4px 16px ${AC}40`,fontSize:12})}}>
+                    🤖 Chat about this
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ CHAT PANEL ═══ */}
+      {chatOpen && (
+        <div className="slide-in"
+          style={{position:"fixed",bottom:0,right:20,zIndex:900,width:400,height:580,
+                  background:T.card,border:`1px solid ${T.border}`,borderBottom:"none",
+                  borderRadius:"12px 12px 0 0",display:"flex",flexDirection:"column",overflow:"hidden",
+                  boxShadow:`0 -8px 40px rgba(0,0,0,.3)`}}>
+
+          {/* Header */}
+          <div style={{padding:"11px 14px",flexShrink:0,
+                       background:`linear-gradient(135deg,${AC}20,${SC}10)`,
+                       borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${AC},${SC})`,
+                         display:"grid",placeItems:"center",fontSize:14}}>🤖</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700}}>B&I Controls AI</div>
+              <div style={{fontSize:10,color:T.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:200}}>
+                {chatSC?.name||"Select a scorecard"}
+              </div>
+            </div>
+            {/* Chart type selector */}
+            <div style={{display:"flex",gap:3}}>
+              {[["auto","🤖"],["bar","📊"],["line","📈"],["pie","🥧"],["kpi","🔢"]].map(([t,ico])=>(
+                <button key={t} onClick={()=>setChartPref(t)}
+                  style={{width:26,height:26,border:"none",borderRadius:6,cursor:"pointer",fontSize:11,
+                          background:chartPref===t?AC:T.inputBg,transition:"all .15s"}} title={t}>{ico}</button>
+              ))}
+            </div>
+            <button onClick={()=>setChatOpen(false)}
+              style={{background:"none",border:"none",cursor:"pointer",color:T.muted}}>
+              <Ico d={I.x} size={16}/>
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div style={{flex:1,overflow:"auto",padding:12,display:"flex",flexDirection:"column",
+                       gap:10,background:T.bg}}>
+            {chatMsgs.map((msg,i)=>(
+              <div key={i} style={{display:"flex",flexDirection:"column",
+                                   alignItems:msg.role==="user"?"flex-end":"flex-start"}}>
+                <div style={{maxWidth:"92%",padding:"9px 12px",borderRadius:10,wordBreak:"break-word",
+                             background:msg.role==="user"?`linear-gradient(135deg,${AC},${SC})`:(msg.error?"rgba(244,63,94,.1)":T.card),
+                             color:msg.role==="user"?"#fff":(msg.error?"#F43F5E":T.text),
+                             border:msg.role==="ai"?`1px solid ${T.border}`:"none",fontSize:12,lineHeight:1.65,
+                             borderBottomRightRadius:msg.role==="user"?2:10,
+                             borderBottomLeftRadius:msg.role==="ai"?2:10}}>
+                  {msg.text.replace(/\*\*(.*?)\*\*/g,"$1")}
+                </div>
+                {msg.role==="ai" && msg.chips && i===chatMsgs.length-1 && (
+                  <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:8,maxWidth:"92%"}}>
+                    {msg.chips.map((c,j)=>(
+                      <button key={j} onClick={()=>setChatIn(c)}
+                        style={{fontSize:10,padding:"4px 10px",borderRadius:12,border:"none",cursor:"pointer",
+                                background:`${AC}15`,color:AC,fontWeight:600,fontFamily:"inherit"}}>
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            {sending && (
+              <div style={{display:"flex",gap:5,padding:"10px 12px",background:T.card,
+                           borderRadius:10,border:`1px solid ${T.border}`,width:"fit-content"}}>
+                {[0,1,2].map(i=>(
+                  <span key={i} className="pulse" style={{width:7,height:7,borderRadius:"50%",
+                    background:T.muted,animationDelay:`${i*.2}s`}}/>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Input */}
+          <div style={{padding:"10px 12px",borderTop:`1px solid ${T.border}`,
+                       display:"flex",gap:8,background:T.card,flexShrink:0}}>
+            <input value={chatIn} onChange={e=>setChatIn(e.target.value)}
+              onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();}}}
+              placeholder="Ask about this scorecard…"
+              style={{flex:1,background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,
+                      padding:"8px 12px",fontSize:12,color:T.text,outline:"none",fontFamily:"inherit"}}/>
+            <button onClick={sendChat} disabled={sending}
+              style={{width:36,height:36,borderRadius:8,border:"none",cursor:"pointer",
+                      background:`linear-gradient(135deg,${AC},${SC})`,display:"grid",placeItems:"center",
+                      opacity:sending?0.6:1}}>
+              <Ico d={I.send} size={14} color="#fff"/>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ FAB ═══ */}
+      {!chatOpen && (
+        <button onClick={()=>{if(chatSC)setChatOpen(true);}}
+          style={{position:"fixed",bottom:24,right:24,width:50,height:50,borderRadius:"50%",
+                  border:"none",cursor:chatSC?"pointer":"default",
+                  background:chatSC?`linear-gradient(135deg,${AC},${SC})`:T.inputBg,
+                  display:"grid",placeItems:"center",fontSize:18,
+                  boxShadow:chatSC?`0 8px 24px ${AC}40`:"none",zIndex:500,transition:"all .2s"}}>
+          🤖
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   SCORECARD CARD
+═══════════════════════════════════════════════ */
+function ScorecardCard({sc,T,AC,theme,onPreview,onChat,index}){
+  const [hovered,setHovered] = useState(false);
+  const rc = sc.rag==="red"?T.red:sc.rag==="amber"?T.amber:sc.rag==="green"?T.green:T.muted;
+  return (
+    <div className="card-hover fade-in"
+      style={{background:hovered?T.cardHover:T.card,borderRadius:12,
+              border:`1px solid ${hovered?rc+"40":T.border}`,
+              padding:"16px 18px",display:"flex",flexDirection:"column",gap:12,cursor:"pointer",
+              borderLeft:`3px solid ${rc}`,
+              boxShadow:hovered?`0 8px 32px rgba(0,0,0,${theme==="dark"?.4:.1})`:`0 2px 12px rgba(0,0,0,${theme==="dark"?.2:.05})`,
+              animationDelay:`${index*.05}s`,transition:"all .2s cubic-bezier(.4,0,.2,1)"}}
+      onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)}>
+
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
+        <div style={{width:40,height:40,borderRadius:10,flexShrink:0,background:`${rc}15`,
+                     display:"grid",placeItems:"center",fontSize:18}}>{sc.icon}</div>
+        <span style={{fontSize:10,padding:"3px 9px",borderRadius:12,fontWeight:700,
+                      background:`${rc}12`,color:rc,border:`1px solid ${rc}30`,
+                      display:"flex",alignItems:"center",gap:4}}>
+          <span style={{width:5,height:5,borderRadius:"50%",background:rc}}/>
+          {sc.rag.toUpperCase()}
+        </span>
+      </div>
+
+      <div>
+        <div style={{fontSize:13,fontWeight:700,lineHeight:1.3,marginBottom:3}}>{sc.name}</div>
+        <div style={{fontSize:11,color:T.muted,lineHeight:1.5}}>{sc.desc}</div>
+      </div>
+
+      <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",borderRadius:8,
+                   background:hovered?`${rc}08`:T.inputBg,border:`1px solid ${hovered?rc+"30":T.border}`,
+                   transition:"all .2s"}}>
+        <div>
+          <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.5,marginBottom:2}}>{sc.kri}</div>
+          <div style={{fontSize:20,fontWeight:800,color:rc,fontFamily:"'DM Mono',monospace",letterSpacing:"-.5px"}}>{sc.value}</div>
+        </div>
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
+          <span style={{fontSize:9}}>{sc.trend==="up"?"↑":sc.trend==="down"?"↓":"→"}</span>
+          <span style={{fontSize:11,fontWeight:700,fontFamily:"'DM Mono',monospace",
+                        color:sc.delta.startsWith("+")?"#10B981":"#F43F5E"}}>{sc.delta}</span>
+        </div>
+      </div>
+
+      <div style={{display:"flex",alignItems:"center",gap:6,borderTop:`1px solid ${T.border}`,paddingTop:10,marginTop:-2}}>
+        <span style={{fontSize:10,fontWeight:700,fontFamily:"'DM Mono',monospace",
+                      background:`${AC}15`,color:AC,padding:"2px 8px",borderRadius:4}}>{sc.region}</span>
+        <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+          <button onClick={e=>{e.stopPropagation();onPreview();}}
+            style={{display:"flex",alignItems:"center",gap:4,padding:"5px 10px",border:"none",
+                    borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:600,fontFamily:"inherit",
+                    background:"#10B98115",color:"#10B981"}}>
+            👁 Preview
+          </button>
+          <button onClick={e=>{e.stopPropagation();onChat();}}
+            style={{display:"flex",alignItems:"center",gap:4,padding:"5px 10px",border:"none",
+                    borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:600,fontFamily:"inherit",
+                    background:`${AC}15`,color:AC}}>
+            🤖 Chat
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   CHART CARD WRAPPER
+═══════════════════════════════════════════════ */
+function ChartCard({title,sub,T,AC,children}){
+  return (
+    <div className="card-hover"
+      style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:20,overflow:"hidden",
+              boxShadow:`0 4px 24px rgba(0,0,0,.2)`}}>
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
+        <div>
+          <div style={{fontSize:13,fontWeight:700}}>{title}</div>
+          <div style={{fontSize:11,color:T.muted,marginTop:2}}>{sub}</div>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
