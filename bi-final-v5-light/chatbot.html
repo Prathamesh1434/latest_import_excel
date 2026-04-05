@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>B&I Controls AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#F5F7FA; --surface:#FFFFFF; --card:#FFFFFF;
+  --navy:#003B6F; --blue:#0057A8; --accent:#0066CC;
+  --blue-light:#EBF3FF; --blue-border:#BFDBFE;
+  --red:#C8102E; --amber:#D97706; --green:#047857;
+  --red-bg:#FEF2F2; --amber-bg:#FFFBEB; --green-bg:#ECFDF5;
+  --red-border:#FECACA; --amber-border:#FDE68A; --green-border:#A7F3D0;
+  --text:#111827; --text-2:#374151; --muted:#6B7280; --sub:#9CA3AF;
+  --border:#E5E7EB; --border-2:#D1D5DB;
+  --shadow:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 12px 32px rgba(0,0,0,.12);
+  --font:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  --r:8px; --r-lg:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-size:14px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);
+     display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}
+
+/* ── TOP BAR ── */
+.topbar{
+  height:52px;background:var(--navy);display:flex;align-items:center;
+  padding:0 14px;gap:10px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,59,111,.25)
+}
+.top-logo{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.15);
+          border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;font-size:13px}
+.top-titles{flex:1;min-width:0}
+.top-main{font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-sub{font-size:10px;color:rgba(255,255,255,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-right{display:flex;align-items:center;gap:5px}
+.hdr-btn{
+  width:30px;height:30px;border-radius:6px;border:1px solid rgba(255,255,255,.2);
+  cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.75);
+  display:grid;place-items:center;font-size:12px;transition:all .15s
+}
+.hdr-btn:hover{background:rgba(255,255,255,.18);color:#fff}
+.sid-chip{
+  font-size:9px;font-family:var(--mono);color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  padding:2px 8px;border-radius:4px
+}
+
+/* ── CHART TYPE BAR ── */
+.chart-bar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:6px 12px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex-shrink:0
+}
+.cb-lbl{font-size:9px;font-weight:600;color:var(--sub);margin-right:3px;letter-spacing:.5px;text-transform:uppercase}
+.ct-btn{
+  font-size:10px;font-weight:500;padding:3px 9px;border-radius:10px;
+  cursor:pointer;border:1px solid var(--border-2);background:var(--bg);
+  color:var(--muted);font-family:var(--font);transition:all .15s
+}
+.ct-btn:hover{border-color:var(--navy);color:var(--navy)}
+.ct-btn.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* ── SESSION BAR ── */
+.session-bar{
+  padding:5px 12px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:11px;color:var(--muted);flex-shrink:0
+}
+.mbadge{
+  font-size:9px;font-weight:700;padding:2px 8px;border-radius:6px;
+  font-family:var(--mono);letter-spacing:.3px;border:1px solid
+}
+.mbadge.pandas{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
+.mbadge.llm{background:var(--blue-light);border-color:var(--blue-border);color:var(--accent)}
+.new-btn{font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;
+         font-family:var(--font);font-weight:600}
+
+/* ── MESSAGES ── */
+.msgs{
+  flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;
+  background:var(--bg)
+}
+.mwrap{display:flex;flex-direction:column;max-width:96%}
+.mwrap.user{align-self:flex-end;align-items:flex-end}
+.mwrap.ai{align-self:flex-start;align-items:flex-start}
+.msender{font-size:9px;color:var(--sub);margin-bottom:3px;font-family:var(--mono)}
+.cmsg{
+  font-size:12px;line-height:1.65;padding:9px 12px;border-radius:10px;
+  word-break:break-word;animation:fd .25s ease
+}
+@keyframes fd{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.cmsg.user{
+  background:var(--navy);color:#fff;border-bottom-right-radius:3px
+}
+.cmsg.ai{
+  background:var(--surface);color:var(--text);
+  border:1px solid var(--border);border-bottom-left-radius:3px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06)
+}
+.cmsg.error{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);font-size:11px}
+
+/* ── CHART CARD ── */
+.chart-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  overflow:hidden;border-bottom-left-radius:3px;width:100%;
+  animation:fd .3s ease;box-shadow:var(--shadow)
+}
+.cc-hdr{
+  background:var(--bg);border-bottom:1px solid var(--border);
+  padding:9px 12px;display:flex;align-items:flex-start;justify-content:space-between
+}
+.cc-title{font-size:12px;font-weight:700;color:var(--navy)}
+.cc-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.cc-acts{display:flex;gap:4px;margin-left:8px;flex-shrink:0}
+.cc-act{
+  font-size:9px;font-weight:600;color:var(--accent);padding:2px 8px;
+  border-radius:6px;cursor:pointer;font-family:var(--font);
+  background:var(--blue-light);border:1px solid var(--blue-border);transition:background .15s
+}
+.cc-act:hover{background:var(--blue-border)}
+.cc-body{padding:12px}
+.cc-body canvas{max-height:175px!important}
+.cc-foot{
+  padding:7px 12px;background:var(--bg);border-top:1px solid var(--border);
+  font-size:10px;color:var(--sub);display:flex;align-items:center;gap:6px;flex-wrap:wrap
+}
+.leg{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.kpi-box{border-radius:var(--r);padding:11px 12px;text-align:center;border:1px solid;border-top:3px solid}
+.kpi-box.red{border-color:var(--red-border);background:var(--red-bg);border-top-color:var(--red)}
+.kpi-box.amber{border-color:var(--amber-border);background:var(--amber-bg);border-top-color:var(--amber)}
+.kpi-box.green{border-color:var(--green-border);background:var(--green-bg);border-top-color:var(--green)}
+.kpi-box.blue{border-color:var(--blue-border);background:var(--blue-light);border-top-color:var(--accent)}
+.kpi-box.na{border-color:var(--border-2);background:var(--bg);border-top-color:var(--sub)}
+.kpi-lbl{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.kpi-val{font-size:20px;font-weight:800;margin:3px 0;font-family:var(--mono);letter-spacing:-.5px;color:var(--navy)}
+.kpi-sub{font-size:9px;color:var(--muted)}
+
+/* ── SCORECARD TABLE ── */
+.sc-wrap{padding:12px;overflow-x:auto}
+.sc-table{width:100%;border-collapse:collapse;font-size:11px}
+.sc-table th{background:var(--bg);padding:6px 10px;text-align:left;font-weight:600;
+             color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.5px;
+             border-bottom:1px solid var(--border);white-space:nowrap}
+.sc-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text-2)}
+.sc-table tr:last-child td{border-bottom:none}
+.sc-table tr:hover td{background:var(--bg)}
+.rag-cell{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;
+          padding:2px 8px;border-radius:5px;border:1px solid}
+.rag-red{background:var(--red-bg);border-color:var(--red-border);color:var(--red)}
+.rag-amber{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.rag-green{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
+.rag-na{background:var(--bg);border-color:var(--border-2);color:var(--sub)}
+
+/* ── DATA TABLE ── */
+.dt-wrap{overflow-x:auto;padding:12px}
+.dt{width:100%;border-collapse:collapse;font-size:11px}
+.dt th{background:var(--bg);padding:6px 10px;text-align:left;font-weight:600;
+       color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.5px;
+       border-bottom:1px solid var(--border);white-space:nowrap}
+.dt td{padding:6px 10px;border-bottom:1px solid rgba(0,0,0,.04);color:var(--text-2)}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:#FAFBFC}
+
+/* ── TYPING ── */
+.tdots{display:flex;align-items:center;gap:4px;padding:10px 12px}
+.tdots span{width:6px;height:6px;border-radius:50%;background:var(--border-2);animation:tb .8s infinite}
+.tdots span:nth-child(2){animation-delay:.2s}.tdots span:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+
+/* ── SUGGESTION CHIPS ── */
+.chips{
+  padding:6px 12px 8px;display:flex;flex-wrap:wrap;gap:5px;
+  border-top:1px solid var(--border);background:var(--surface);flex-shrink:0
+}
+.chip{
+  font-size:10px;font-weight:500;color:var(--navy);
+  background:var(--blue-light);border:1px solid var(--blue-border);
+  padding:3px 10px;border-radius:10px;cursor:pointer;font-family:var(--font);
+  transition:all .15s;white-space:nowrap
+}
+.chip:hover{background:var(--blue-border);border-color:var(--navy)}
+
+/* ── INPUT ROW ── */
+.inp-row{
+  padding:10px 12px;border-top:1px solid var(--border);
+  display:flex;gap:7px;align-items:flex-end;
+  background:var(--surface);flex-shrink:0
+}
+.mode-wrap{display:flex;gap:3px;flex-shrink:0}
+.mode-btn{
+  font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;
+  border:1px solid var(--border-2);cursor:pointer;font-family:var(--font);
+  transition:all .15s;letter-spacing:.3px
+}
+.mode-btn.pandas{background:var(--bg);color:var(--muted)}
+.mode-btn.pandas.on{background:var(--green);color:#fff;border-color:var(--green)}
+.mode-btn.llm{background:var(--bg);color:var(--muted)}
+.mode-btn.llm.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+textarea.inp{
+  flex:1;border:1.5px solid var(--border-2);border-radius:var(--r);
+  padding:8px 10px;font-size:12px;font-family:var(--font);
+  resize:none;line-height:1.5;max-height:70px;color:var(--text);
+  outline:none;background:var(--surface);transition:border-color .15s
+}
+textarea.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,102,204,.08)}
+textarea.inp::placeholder{color:var(--sub)}
+.send-btn{
+  width:36px;height:36px;border-radius:var(--r);border:none;cursor:pointer;
+  background:var(--navy);display:grid;place-items:center;flex-shrink:0;
+  transition:all .15s;box-shadow:0 2px 6px rgba(0,59,111,.3)
+}
+.send-btn:hover{background:var(--blue);box-shadow:0 4px 10px rgba(0,59,111,.4)}
+.send-btn:disabled{opacity:.4;cursor:not-allowed}
+.send-btn svg{width:14px;height:14px;stroke:#fff;stroke-width:2;fill:none}
+
+/* ── FOOTER ── */
+.foot{
+  padding:4px 12px;font-size:10px;color:var(--sub);text-align:center;
+  border-top:1px solid var(--border);background:var(--surface);flex-shrink:0
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="top-logo">🤖</div>
+  <div class="top-titles">
+    <div class="top-main" id="top-main">B&I Controls AI</div>
+    <div class="top-sub"  id="top-sub">Loading…</div>
+  </div>
+  <div class="top-right">
+    <span class="sid-chip" id="sid-chip">No session</span>
+    <button class="hdr-btn" onclick="exportChat()" title="Export">⬇</button>
+    <button class="hdr-btn" onclick="clearChat()" title="Clear">↺</button>
+    <button class="hdr-btn" onclick="newSession()" title="New">＋</button>
+  </div>
+</header>
+
+<!-- CHART TYPE SELECTOR -->
+<div class="chart-bar">
+  <span class="cb-lbl">View</span>
+  <button class="ct-btn on"  onclick="setCT(this,'auto')">Auto</button>
+  <button class="ct-btn"     onclick="setCT(this,'bar')">Bar</button>
+  <button class="ct-btn"     onclick="setCT(this,'line')">Trend</button>
+  <button class="ct-btn"     onclick="setCT(this,'pie')">Pie</button>
+  <button class="ct-btn"     onclick="setCT(this,'doughnut')">Donut</button>
+  <button class="ct-btn"     onclick="setCT(this,'kpi')">KPI</button>
+  <button class="ct-btn"     onclick="setCT(this,'table')">Table</button>
+  <button class="ct-btn"     onclick="setCT(this,'scorecard')">Scorecard</button>
+</div>
+
+<!-- SESSION BAR -->
+<div class="session-bar">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="mbadge pandas" id="mbadge">PANDAS</span>
+    <span id="sess-info" style="font-family:var(--mono);font-size:10px">Ready</span>
+  </div>
+  <button class="new-btn" onclick="newSession()">+ New Session</button>
+</div>
+
+<!-- MESSAGES -->
+<div class="msgs" id="msgs"></div>
+
+<!-- CHIPS -->
+<div class="chips" id="chips" style="display:none"></div>
+
+<!-- INPUT -->
+<div class="inp-row">
+  <div class="mode-wrap">
+    <button class="mode-btn pandas on" id="m-pandas" onclick="setMode('pandas')">PANDAS</button>
+    <button class="mode-btn llm"       id="m-llm"    onclick="setMode('llm')">AI</button>
+  </div>
+  <textarea class="inp" id="inp" rows="1" placeholder="Ask using pandas — instant, no AI cost…"></textarea>
+  <button class="send-btn" id="send-btn">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+  </button>
+</div>
+<div class="foot">Vertex AI Gemini · Smart Charts · Oracle History · Citi Confidential</div>
+
+<script>
+const API    = "http://localhost:8000";
+const params = new URLSearchParams(window.location.search);
+const scId   = params.get("id")   || "uk-kri";
+const scName = params.get("name") || "Scorecard";
+const userId = params.get("user") || "ANONYMOUS";
+const viewId = params.get("view") || "";
+
+document.getElementById("top-main").textContent = "B&I Controls AI";
+document.getElementById("top-sub").textContent  = scName;
+document.title = `AI — ${scName}`;
+
+let history=[], sessionId=null, chartPref="auto", mode="pandas", idx=0, msgCount=0;
+
+/* ── INIT ── */
+addMsg("ai",`Scoped to <strong>${esc(scName)}</strong>. Use <strong>PANDAS</strong> for instant free answers, or <strong>AI</strong> for Gemini-powered insights.`);
+loadChips();
+
+async function loadChips() {
+  const el=document.getElementById("chips");
+  try {
+    const r=await fetch(`${API}/questions/${scId}?max_q=6`);
+    if(r.ok){const d=await r.json();if((d.questions||[]).length){renderChips(d.questions);return;}}
+  } catch(e){}
+  renderChips(["Show dashboard summary","Which items are breaching?","Show trend over time","RAG status distribution","Top performers","Variance from last period"]);
+}
+
+function renderChips(qs) {
+  const el=document.getElementById("chips");
+  el.innerHTML=qs.map(q=>`<button class="chip" onclick="useChip(this)">${esc(q)}</button>`).join("");
+  el.style.display="flex";
+}
+
+function useChip(btn) {
+  document.getElementById("inp").value=btn.textContent;
+  document.getElementById("chips").style.display="none";
+  send();
+}
+
+/* ── SEND ── */
+document.getElementById("send-btn").addEventListener("click",send);
+document.getElementById("inp").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}
+});
+document.getElementById("inp").addEventListener("input",function(){
+  this.style.height="auto";this.style.height=Math.min(this.scrollHeight,70)+"px";
+});
+
+async function send() {
+  const inp=document.getElementById("inp"),btn=document.getElementById("send-btn");
+  const q=inp.value.trim();if(!q)return;
+  addMsg("user",q);history.push({role:"user",content:q});
+  inp.value="";inp.style.height="auto";btn.disabled=true;
+  document.getElementById("chips").style.display="none";
+  const tid=showTyping();msgCount++;
+  document.getElementById("sess-info").textContent=`${msgCount} message${msgCount!==1?"s":""}`;
+
+  try {
+    const endpoint = mode==="pandas" ? `${API}/query/${scId}` : `${API}/chat/`;
+    const body     = mode==="pandas"
+      ? JSON.stringify({question:q})
+      : JSON.stringify({scorecard_id:scId,scorecard_name:scName,
+                         messages:history,session_id:sessionId||undefined,
+                         user_id:userId,view_id:viewId||"",max_tokens:800});
+
+    const res=await fetch(endpoint,{method:"POST",
+      headers:{"Content-Type":"application/json","X-User-ID":userId},body});
+    removeTyping(tid);
+
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.detail||`HTTP ${res.status}`);}
+    const data=await res.json();
+
+    if(data.session_id){sessionId=data.session_id;document.getElementById("sid-chip").textContent=sessionId.substring(0,8)+"…";}
+
+    const m=data.method||(mode==="llm"?"llm":"pandas");
+    const mb=document.getElementById("mbadge");
+    if(m==="llm"){mb.className="mbadge llm";mb.textContent="GEMINI";}
+    else{mb.className="mbadge pandas";mb.textContent="PANDAS";}
+
+    const reply=data.reply||data.answer||"";
+    history.push({role:"assistant",content:reply});
+    renderResp(reply,data.chart||null,data);
+  } catch(err) {
+    removeTyping(tid);
+    const msg=err.message.includes("fetch")
+      ?`⚠️ Backend offline.<br><code style="font-family:var(--mono);font-size:10px">uvicorn backend.main:app --port 8000</code>`
+      :`⚠️ ${esc(err.message)}`;
+    addMsg("error",msg);
+  }
+  btn.disabled=false;document.getElementById("inp").focus();
+}
+
+/* ── RENDER ── */
+function renderResp(reply,chart,raw) {
+  addMsg("ai",reply);
+  if(!chart&&raw) chart=raw.chart||inferChart(raw);
+  if(!chart) return;
+  const type=resolveType(chart);
+  if(!type||type==="text") return;
+  if(type==="kpi"&&chart.kpis)        renderKPI(chart);
+  else if(type==="scorecard"&&chart.rows) renderScorecard(chart);
+  else if(type==="table"&&chart.rows)     renderTable(chart);
+  else if(type==="pie"&&chart.labels)     renderPie(chart,"pie");
+  else if(type==="doughnut"&&chart.labels)renderPie(chart,"doughnut");
+  else if(type==="line"&&chart.labels)    renderLine(chart);
+  else if(type==="bar"&&chart.labels)     renderBar(chart);
+  else if(chart.kpis)                     renderKPI(chart);
+  else if(chart.rows)                     renderTable(chart);
+  else if(chart.labels&&chart.datasets)   renderBar(chart);
+}
+
+function resolveType(chart){
+  if(chartPref!=="auto"){if(["kpi","table","scorecard"].includes(chart.chart_type))return chart.chart_type;return chartPref;}
+  return chart.chart_type||"text";
+}
+
+function inferChart(data) {
+  if(!data.data||!Array.isArray(data.data)||!data.data.length) return null;
+  const keys=Object.keys(data.data[0]);
+  if(keys.includes("label")&&keys.includes("value")){
+    return{chart_type:"bar",title:"Results",subtitle:scName,
+           labels:data.data.map(d=>String(d.label)),
+           datasets:[{label:"Value",data:data.data.map(d=>d.value||d.count||0),color:"#0057A8"}]};
+  }
+  return null;
+}
+
+/* ── CHART COLOURS (enterprise light palette) ── */
+const COLS=["#0057A8","#C8102E","#047857","#D97706","#7C3AED","#0891B2","#9CA3AF"];
+
+function mkCard(chart,body) {
+  const d=document.createElement("div");d.className="chart-card";
+  d.innerHTML=`
+    <div class="cc-hdr">
+      <div><div class="cc-title">${esc(chart.title||"")}</div>
+           <div class="cc-sub">${esc(chart.subtitle||scName)}</div></div>
+      <div class="cc-acts">
+        <button class="cc-act" onclick="dlChart(this)">⬇ PNG</button>
+        <button class="cc-act" onclick="expandCard(this)">⛶</button>
+      </div>
+    </div>
+    ${body}
+    <div class="cc-foot">
+      <span style="font-family:var(--mono);font-size:9px">${esc(scName)} · ${new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</span>
+    </div>`;
+  return d;
+}
+
+function appendCard(card) {
+  const box=document.getElementById("msgs"),w=document.createElement("div");
+  w.className="mwrap ai";
+  const s=document.createElement("div");s.className="msender";s.textContent="B&I Controls AI";
+  w.appendChild(s);w.appendChild(card);box.appendChild(w);box.scrollTop=box.scrollHeight;
+}
+
+function renderKPI(chart) {
+  const id="kpi-"+(++idx);
+  const card=mkCard(chart,`<div class="kpi-grid" id="${id}"></div>`);
+  appendCard(card);
+  const g=document.getElementById(id);
+  (chart.kpis||[]).forEach(k=>{
+    const d=document.createElement("div");
+    const cl=k.color||(k.rag_status?.toLowerCase())||"blue";
+    d.className=`kpi-box ${cl}`;
+    d.innerHTML=`<div class="kpi-lbl">${esc(k.label||k.id||"")}</div>
+                 <div class="kpi-val">${esc(k.value||k.val||"")}</div>
+                 <div class="kpi-sub">${esc(k.subtitle||k.sub||"")}</div>`;
+    g.appendChild(d);
+  });
+}
+
+function renderScorecard(chart) {
+  const cols=chart.columns||[];const rows=chart.rows||[];
+  const rc=v=>{const lo=String(v).toLowerCase();return lo.includes("red")?"rag-red":lo.includes("amb")?"rag-amber":lo.includes("gre")?"rag-green":"rag-na";};
+  const html=`<div class="sc-wrap"><table class="sc-table">
+    <thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(row=>`<tr>${row.map((cell,ci)=>{const r=rc(cell);return(r!=="rag-na"&&ci>0)?`<td><span class="rag-cell ${r}">${esc(cell)}</span></td>`:`<td>${esc(cell)}</td>`;}).join("")}</tr>`).join("")}</tbody>
+  </table></div>`;
+  appendCard(mkCard(chart,html));
+}
+
+function renderTable(chart) {
+  const cols=chart.table_cols||chart.columns||[];const rows=chart.table_rows||chart.rows||[];
+  const sc={red:"color:var(--red)",amber:"color:var(--amber)",green:"color:var(--green)",
+            pass:"color:var(--green)",fail:"color:var(--red)"};
+  const html=`<div class="dt-wrap"><table class="dt">
+    <thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(row=>`<tr>${row.map(cell=>{const st=sc[String(cell).toLowerCase()];return st?`<td style="font-weight:600;${st}">${esc(cell)}</td>`:`<td>${esc(cell)}</td>`;}).join("")}</tr>`).join("")}</tbody>
+  </table></div>`;
+  appendCard(mkCard(chart,html));
+}
+
+function renderBar(chart) {
+  const id="c-"+(++idx);
+  const card=mkCard(chart,`<div class="cc-body"><canvas id="${id}"></canvas></div>`);
+  appendCard(card);
+  const multi=(chart.datasets||[]).length>1;
+  new Chart(document.getElementById(id),{type:"bar",
+    data:{labels:chart.labels,datasets:(chart.datasets||[]).map((ds,i)=>({
+      label:ds.label||"",data:ds.data,
+      backgroundColor:(ds.color||COLS[i%COLS.length])+"22",
+      borderColor:ds.color||COLS[i%COLS.length],borderWidth:2,borderRadius:4,borderSkipped:false
+    }))},
+    options:{responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{display:multi,position:"bottom",labels:{font:{size:10},boxWidth:10}}},
+      scales:{
+        y:{beginAtZero:true,ticks:{font:{size:10},color:"#6B7280"},
+           grid:{color:"#F3F4F6"},border:{display:false}},
+        x:{ticks:{font:{size:10},color:"#6B7280"},grid:{display:false},border:{display:false}}
+      },animation:{duration:600}}
+  });
+}
+
+function renderLine(chart) {
+  const id="c-"+(++idx);
+  const card=mkCard(chart,`<div class="cc-body"><canvas id="${id}"></canvas></div>`);
+  appendCard(card);
+  new Chart(document.getElementById(id),{type:"line",
+    data:{labels:chart.labels,datasets:(chart.datasets||[]).map((ds,i)=>({
+      label:ds.label||"",data:ds.data,
+      borderColor:ds.color||COLS[i%COLS.length],
+      backgroundColor:(ds.color||COLS[i%COLS.length])+"15",
+      borderWidth:ds.dashed?2:2.5,borderDash:ds.dashed?[6,4]:[],
+      pointRadius:ds.dashed?0:4,pointBackgroundColor:ds.color||COLS[i%COLS.length],
+      fill:!ds.dashed,tension:0.4
+    }))},
+    options:{responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{display:(chart.datasets||[]).length>1,position:"bottom",labels:{font:{size:10},boxWidth:10}}},
+      scales:{
+        y:{beginAtZero:true,ticks:{font:{size:10},color:"#6B7280"},grid:{color:"#F3F4F6"},border:{display:false}},
+        x:{ticks:{font:{size:10},color:"#6B7280"},grid:{display:false},border:{display:false}}
+      },animation:{duration:700}}
+  });
+}
+
+function renderPie(chart,type) {
+  const id="c-"+(++idx);
+  const colors=chart.colors||COLS;
+  const card=mkCard(chart,`<div class="cc-body" style="max-width:210px;margin:0 auto"><canvas id="${id}"></canvas></div>`);
+  setTimeout(()=>{
+    const f=card.querySelector(".cc-foot");
+    if(f&&chart.labels)f.innerHTML=(chart.labels||[]).map((l,i)=>
+      `<span class="leg" style="background:${colors[i]||COLS[0]}"></span>${esc(String(l))}: ${(chart.data||[])[i]||0}`
+    ).join("&nbsp;&nbsp;");
+  },50);
+  appendCard(card);
+  new Chart(document.getElementById(id),{type,
+    data:{labels:chart.labels,datasets:[{data:chart.data||[],
+      backgroundColor:colors.map(c=>c+"DD"),borderColor:"#ffffff",borderWidth:2,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},animation:{duration:600}}
+  });
+}
+
+function dlChart(btn){const c=btn.closest(".chart-card").querySelector("canvas");if(!c)return;const a=document.createElement("a");a.href=c.toDataURL("image/png");a.download=`bi-chart-${Date.now()}.png`;a.click();}
+function expandCard(btn){const card=btn.closest(".chart-card");card.style.width=card.style.width==="100%"?"":"100%";}
+
+/* ── MESSAGES ── */
+function addMsg(type,html){
+  const box=document.getElementById("msgs"),w=document.createElement("div");
+  w.className="mwrap "+type;
+  const s=document.createElement("div");s.className="msender";
+  s.textContent=type==="user"?"You":"B&I Controls AI";
+  const d=document.createElement("div");d.className="cmsg "+type;d.innerHTML=html;
+  w.appendChild(s);w.appendChild(d);box.appendChild(w);box.scrollTop=box.scrollHeight;
+}
+
+function showTyping(){
+  const box=document.getElementById("msgs"),w=document.createElement("div");
+  const tid="typ"+Date.now();w.id=tid;w.className="mwrap ai";
+  const s=document.createElement("div");s.className="msender";s.textContent="B&I Controls AI";
+  const d=document.createElement("div");d.className="cmsg ai";
+  d.innerHTML='<div class="tdots"><span></span><span></span><span></span></div>';
+  w.appendChild(s);w.appendChild(d);box.appendChild(w);box.scrollTop=box.scrollHeight;
+  return tid;
+}
+
+function removeTyping(tid){document.getElementById(tid)?.remove();}
+
+/* ── CONTROLS ── */
+function setCT(btn,t){document.querySelectorAll(".ct-btn").forEach(b=>b.classList.remove("on"));btn.classList.add("on");chartPref=t;}
+
+function setMode(m){
+  mode=m;
+  document.getElementById("m-pandas").classList.toggle("on",m==="pandas");
+  document.getElementById("m-llm").classList.toggle("on",m==="llm");
+  document.getElementById("inp").placeholder=
+    m==="pandas"?"Ask using pandas — instant, no AI cost…":"Ask using Vertex AI Gemini…";
+}
+
+function newSession(){
+  sessionId=null;history=[];msgCount=0;
+  document.getElementById("msgs").innerHTML="";
+  document.getElementById("sid-chip").textContent="No session";
+  document.getElementById("sess-info").textContent="Ready";
+  addMsg("ai",`New session started for <strong>${esc(scName)}</strong>.`);
+  loadChips();
+}
+
+function clearChat(){
+  history=[];msgCount=0;
+  document.getElementById("msgs").innerHTML="";
+  addMsg("ai",`Chat cleared. Ask me anything about <strong>${esc(scName)}</strong>.`);
+  loadChips();
+}
+
+function exportChat(){
+  if(!history.length)return;
+  const lines=[`B&I Controls AI Chat Export`,`Scorecard: ${scName} (${scId})`,
+    `Date: ${new Date().toLocaleString("en-GB")}`,`Session: ${sessionId||"N/A"}`,"",...history.map(m=>`[${m.role.toUpperCase()}]\n${m.content}\n`)];
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain"}));
+  a.download=`chat-${scId}-${Date.now()}.txt`;a.click();
+}
+
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+document.getElementById("inp").focus();
+</script>
+</body>
+</html>

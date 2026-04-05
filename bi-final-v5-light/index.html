@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>B&I Controls Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#F0F2F5;--surface:#FFF;--card:#FFF;
+  --navy:#003B6F;--blue:#0057A8;--accent:#0066CC;
+  --blue-light:#EBF3FF;--blue-border:#BFDBFE;
+  --red:#C8102E;--amber:#D97706;--green:#047857;
+  --red-bg:#FEF2F2;--amber-bg:#FFFBEB;--green-bg:#ECFDF5;
+  --red-bdr:#FECACA;--amber-bdr:#FDE68A;--green-bdr:#A7F3D0;
+  --text:#111827;--text2:#374151;--muted:#6B7280;--sub:#9CA3AF;
+  --border:#E5E7EB;--border2:#D1D5DB;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+  --shadow:0 4px 12px rgba(0,0,0,.08);
+  --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:8px;--rl:12px
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-size:14px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);
+     display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* TOP BAR */
+.topbar{height:56px;background:var(--navy);display:flex;align-items:center;
+        padding:0 24px;gap:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,59,111,.3)}
+.logo{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;font-size:14px}
+.brand{display:flex;flex-direction:column;gap:1px}
+.brand-n{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.2px}
+.brand-s{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.6px}
+.badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;
+       background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);
+       letter-spacing:1px;border:1px solid rgba(255,255,255,.2)}
+.search-wrap{flex:1;max-width:360px}
+.search-inp-w{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);
+              border:1px solid rgba(255,255,255,.15);border-radius:var(--r);padding:7px 12px}
+.search-inp-w input{background:none;border:none;outline:none;color:#fff;font-size:13px;
+                    flex:1;font-family:inherit}
+.search-inp-w input::placeholder{color:rgba(255,255,255,.4)}
+
+/* BODY LAYOUT */
+.layout{flex:1;display:flex;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);
+         display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.nav{padding:12px 8px;display:flex;flex-direction:column;gap:1px}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);
+         border:none;cursor:pointer;font-size:13px;text-align:left;width:100%;
+         font-family:inherit;transition:all .15s;background:transparent;color:var(--text2)}
+.nav-btn.active{background:var(--blue-light);color:var(--accent);font-weight:600}
+.nav-btn:hover:not(.active){background:var(--bg)}
+.nav-divider{height:1px;background:var(--border);margin:10px 4px}
+.nav-section{padding:2px 12px 5px;font-size:9px;font-weight:600;color:var(--sub);
+             letter-spacing:.9px;text-transform:uppercase}
+.entity-btn{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r);
+            border:none;cursor:pointer;background:transparent;color:var(--text2);
+            font-size:12px;text-align:left;width:100%;font-family:inherit;transition:background .15s}
+.entity-btn:hover{background:var(--bg)}
+.entity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.entity-cnt{font-size:9px;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:auto}
+.sidebar-foot{margin-top:auto;padding:14px 16px;border-top:1px solid var(--border);
+              font-size:11px;color:var(--muted);line-height:1.8}
+.sidebar-foot strong{display:block;color:var(--text2);font-weight:600;margin-bottom:2px}
+.ver{color:var(--accent);font-size:10px;font-family:var(--mono)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.tab-nav{background:var(--surface);border-bottom:1px solid var(--border);
+         display:flex;padding:0 24px}
+.tab-btn{padding:14px 20px;border:none;background:none;cursor:pointer;font-size:13px;
+         font-family:inherit;color:var(--muted);transition:all .15s;margin-bottom:-1px}
+.tab-btn.active{color:var(--accent);font-weight:600;border-bottom:2px solid var(--accent)}
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* PAGE HEADER */
+.page-hdr{margin-bottom:20px}
+.page-hdr h1{font-size:22px;font-weight:700;color:var(--navy);letter-spacing:-.3px}
+.page-hdr p{font-size:13px;color:var(--muted);margin-top:4px}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-bottom:6px}
+.breadcrumb strong{color:var(--navy);font-weight:500}
+
+/* KPI TILES */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi-tile{background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);
+          padding:16px 20px;box-shadow:var(--shadow-sm);transition:box-shadow .2s,transform .2s}
+.kpi-tile:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.kpi-tile-l{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;
+            letter-spacing:.8px;margin-bottom:8px}
+.kpi-tile-v{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1}
+.kpi-tile.red{border-top:3px solid var(--red)}
+.kpi-tile.amber{border-top:3px solid var(--amber)}
+.kpi-tile.green{border-top:3px solid var(--green)}
+.kpi-tile.total{border-top:3px solid var(--navy)}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.filter-btn{padding:5px 14px;border-radius:20px;cursor:pointer;font-size:12px;
+            font-weight:600;font-family:inherit;transition:all .2s;border:1px solid var(--border2);
+            background:var(--surface);color:var(--muted)}
+.filter-btn:hover,.filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.filter-btn.active-red{background:var(--red-bg);color:var(--red);border-color:var(--red-bdr)}
+.filter-btn.active-amber{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bdr)}
+.filter-btn.active-green{background:var(--green-bg);color:var(--green);border-color:var(--green-bdr)}
+.connect-btn{margin-left:auto;padding:7px 14px;border-radius:var(--r);border:none;
+             cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;
+             background:var(--navy);color:#fff;text-decoration:none;
+             display:inline-flex;align-items:center;gap:6px;
+             box-shadow:0 2px 6px rgba(0,59,111,.25)}
+.connect-btn:hover{background:var(--blue)}
+
+/* ENTITY SECTION */
+.entity-section{margin-bottom:24px}
+.entity-hdr{display:flex;align-items:center;gap:12px;padding:12px 16px;
+            background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);
+            box-shadow:var(--shadow-sm);cursor:pointer;margin-bottom:12px;transition:box-shadow .2s}
+.entity-hdr:hover{box-shadow:var(--shadow)}
+.entity-ico{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;font-size:16px;flex-shrink:0}
+.entity-name{font-size:13px;font-weight:700;font-family:var(--mono)}
+.entity-full{font-size:12px;color:var(--muted)}
+.entity-region{font-size:9px;padding:2px 8px;border-radius:3px;font-weight:600;border:1px solid}
+.entity-count{font-size:11px;color:var(--muted)}
+.chevron{color:var(--muted);font-size:14px;transition:transform .2s}
+.chevron.open{transform:rotate(90deg)}
+
+/* SCORECARD CARDS */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+.sc-card{background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);
+         padding:16px 18px;display:flex;flex-direction:column;gap:12px;
+         box-shadow:var(--shadow-sm);transition:all .2s;cursor:default}
+.sc-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.sc-card.rag-red{border-left:4px solid var(--red)}
+.sc-card.rag-amber{border-left:4px solid var(--amber)}
+.sc-card.rag-green{border-left:4px solid var(--green)}
+.sc-card.rag-na{border-left:4px solid var(--border2)}
+.sc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.sc-icon{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;font-size:18px;flex-shrink:0}
+.rag-pill{font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid;
+          display:inline-flex;align-items:center;gap:4px;letter-spacing:.2px}
+.rag-pill.red{background:var(--red-bg);color:var(--red);border-color:var(--red-bdr)}
+.rag-pill.amber{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bdr)}
+.rag-pill.green{background:var(--green-bg);color:var(--green);border-color:var(--green-bdr)}
+.rag-pill.na{background:var(--bg);color:var(--sub);border-color:var(--border2)}
+.rag-pill::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.sc-name{font-size:13px;font-weight:700;color:var(--navy);line-height:1.3;margin-bottom:2px}
+.sc-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.sc-metric{display:flex;align-items:center;padding:10px 12px;border-radius:var(--r);
+           background:var(--bg);border:1px solid var(--border)}
+.sc-kri{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;
+        letter-spacing:.5px;margin-bottom:2px}
+.sc-val{font-size:18px;font-weight:800;font-family:var(--mono)}
+.sc-delta{margin-left:auto;font-size:11px;font-weight:600}
+.sc-delta.up{color:var(--red)}.sc-delta.down{color:var(--green)}.sc-delta.flat{color:var(--muted)}
+.sc-footer{display:flex;align-items:center;gap:6px;border-top:1px solid var(--border);padding-top:10px}
+.sc-region{font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;
+           background:var(--blue-light);color:var(--accent);font-family:var(--mono);border:1px solid var(--blue-border)}
+.sc-actions{margin-left:auto;display:flex;gap:6px}
+.btn-sm{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;
+        cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;border:1px solid}
+.btn-preview{background:var(--surface);color:var(--text2);border-color:var(--border2)}
+.btn-preview:hover{background:var(--bg);border-color:var(--navy)}
+.btn-chat{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn-chat:hover{background:var(--blue)}
+
+/* HISTORY */
+.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
+           padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;
+           box-shadow:var(--shadow-sm);cursor:pointer;transition:all .2s}
+.hist-item:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.hist-ico{width:38px;height:38px;border-radius:8px;background:var(--blue-light);
+          display:grid;place-items:center;font-size:16px;flex-shrink:0}
+.hist-name{font-size:13px;font-weight:600;color:var(--navy)}
+.hist-meta{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.hist-msgs{font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;
+           background:var(--blue-light);color:var(--accent);font-family:var(--mono)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.4);
+               backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{width:100%;max-width:780px;background:var(--surface);border-radius:var(--rl);
+       box-shadow:0 24px 64px rgba(0,0,0,.15);border:1px solid var(--border);overflow:hidden;
+       animation:fd .25s ease}
+@keyframes fd{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.modal-hdr{padding:18px 24px;border-bottom:1px solid var(--border);background:var(--bg);
+           display:flex;align-items:center;gap:14px}
+.modal-body{padding:24px}
+.m-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.m-stat{background:var(--bg);border-radius:var(--r);padding:14px 16px;border:1px solid var(--border)}
+.m-stat-l{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.m-stat-v{font-size:20px;font-weight:800;font-family:var(--mono)}
+.tableau-ph{background:var(--bg);border-radius:var(--r);border:1px dashed var(--border2);
+            padding:32px;text-align:center;margin-bottom:16px}
+.close-btn{width:32px;height:32px;border-radius:var(--r);border:1px solid var(--border2);
+           background:var(--surface);cursor:pointer;font-size:16px;color:var(--muted);
+           display:grid;place-items:center;transition:all .15s}
+.close-btn:hover{background:var(--bg);color:var(--navy)}
+.modal-actions{display:flex;gap:8px;justify-content:center}
+.modal-btn{padding:8px 18px;border-radius:var(--r);cursor:pointer;font-size:12px;
+           font-weight:600;font-family:inherit;transition:all .15s}
+.modal-btn.secondary{background:var(--surface);border:1px solid var(--border2);color:var(--text2)}
+.modal-btn.secondary:hover{border-color:var(--navy);color:var(--navy)}
+.modal-btn.primary{background:var(--navy);border:none;color:#fff;
+                   box-shadow:0 2px 6px rgba(0,59,111,.25)}
+.modal-btn.primary:hover{background:var(--blue)}
+
+/* ANALYTICS */
+.analytics-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.a-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
+        padding:16px 20px;box-shadow:var(--shadow-sm);transition:all .2s}
+.a-stat:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.a-stat-l{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.a-stat-v{font-size:26px;font-weight:800;color:var(--navy)}
+.a-stat-d{font-size:11px;font-weight:500;margin-top:4px}
+.a-stat-d.up{color:var(--green)}.a-stat-d.dn{color:var(--red)}
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
+           overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:16px}
+.chart-box-hdr{padding:14px 16px 10px;border-bottom:1px solid var(--border)}
+.chart-box-title{font-size:13px;font-weight:700;color:var(--navy)}
+.chart-box-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.chart-box-body{padding:14px 16px 16px}
+.cov-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cov-name{font-size:11px;font-weight:700;font-family:var(--mono);width:60px;flex-shrink:0}
+.cov-bar-wrap{flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.cov-bar{height:100%;border-radius:4px;transition:width .6s}
+.cov-cnt{font-size:11px;font-weight:600;color:var(--text2);width:20px;text-align:right}
+
+/* Trend chart basic CSS */
+.trend-chart{height:160px;position:relative;padding:8px 0}
+.trend-placeholder{height:100%;display:flex;align-items:center;justify-content:center;
+                   color:var(--sub);font-size:11px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="logo">✦</div>
+  <div class="brand">
+    <div class="brand-n">B&I Controls Hub</div>
+    <div class="brand-s">BANKING &amp; INTERNATIONAL · DATA ANALYTICS</div>
+  </div>
+  <span class="badge">ENTERPRISE</span>
+
+  <div class="search-wrap">
+    <div class="search-inp-w">
+      <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,.5)" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input id="search" placeholder="Search scorecards…" oninput="renderAll()"/>
+    </div>
+  </div>
+
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+    <div id="health" style="display:flex;gap:6px;padding:5px 10px;background:rgba(255,255,255,.08);
+         border-radius:6px;border:1px solid rgba(255,255,255,.12)">
+      <span style="font-size:9px;color:rgba(255,255,255,.55);font-family:var(--mono)">Checking…</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;
+                background:rgba(255,255,255,.08);border-radius:6px;border:1px solid rgba(255,255,255,.12)">
+      <div style="width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,.2);
+                  display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff">PG</div>
+      <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.9)">PG23137</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="nav">
+      <button class="nav-btn active" id="nav-hub"       onclick="setTab('hub')">⊞ Scorecards</button>
+      <button class="nav-btn"        id="nav-analytics"  onclick="setTab('analytics')">📊 Analytics</button>
+      <button class="nav-btn"        id="nav-history"    onclick="setTab('history')">💬 Chat History</button>
+      <div class="nav-divider"></div>
+      <div class="nav-section">Legal Entities</div>
+      <button class="entity-btn" onclick="setTab('hub')">
+        <span class="entity-dot" style="background:#003B6F"></span>
+        <span style="flex:1;font-weight:500">CGML</span>
+        <span class="entity-cnt" style="background:#003B6F18;color:#003B6F">5</span>
+      </button>
+      <button class="entity-btn" onclick="setTab('hub')">
+        <span class="entity-dot" style="background:#047857"></span>
+        <span style="flex:1;font-weight:500">CGMSE</span>
+        <span class="entity-cnt" style="background:#04785718;color:#047857">1</span>
+      </button>
+      <button class="entity-btn" onclick="setTab('hub')">
+        <span class="entity-dot" style="background:#7C3AED"></span>
+        <span style="flex:1;font-weight:500">CGME</span>
+        <span class="entity-cnt" style="background:#7C3AED18;color:#7C3AED">1</span>
+      </button>
+      <button class="entity-btn" onclick="setTab('hub')">
+        <span class="entity-dot" style="background:#374151"></span>
+        <span style="flex:1;font-weight:500">ALL</span>
+        <span class="entity-cnt" style="background:#37415118;color:#374151">1</span>
+      </button>
+      <div class="nav-divider"></div>
+      <a href="connect.html" style="display:flex;align-items:center;gap:8px;padding:9px 12px;
+         border-radius:var(--r);text-decoration:none;font-size:13px;font-weight:600;
+         color:var(--accent);background:var(--blue-light);border:1px solid var(--blue-border)">
+        🔌 Connect Dashboard
+      </a>
+    </div>
+    <div class="sidebar-foot">
+      <strong>Workstream 2</strong>
+      Controls Codification<br/>
+      <span class="ver">v4.0 · April 2026</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tab-hub"       onclick="setTab('hub')">Scorecards</button>
+      <button class="tab-btn"        id="tab-analytics"  onclick="setTab('analytics')">Analytics</button>
+      <button class="tab-btn"        id="tab-history"    onclick="setTab('history')">Chat History</button>
+    </div>
+    <div class="content" id="content">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal" id="modal-inner">
+    <!-- Filled by JS -->
+  </div>
+</div>
+
+<script>
+/* ── DATA ── */
+const ENTITIES=[
+  {id:"CGML",name:"Citigroup Global Markets Ltd",region:"United Kingdom",color:"#003B6F",icon:"🏛️",
+   scs:[
+    {id:"crmr-cde",icon:"📊",rag:"amber",name:"CRMR CDE Exceptions",     desc:"CDE Data Quality · UK-K11",       kri:"UK-K11",value:"7 Fail", delta:"+2",    region:"UK"},
+    {id:"uk-kri",  icon:"🎯",rag:"red",  name:"UK KRI Scorecard",         desc:"UK-K40 · K41 · K42 · K43",        kri:"UK-K41",value:"8%",     delta:"-57.9%",region:"UK"},
+    {id:"kri-dash",icon:"📈",rag:"amber",name:"KRI Dashboard",            desc:"Overall 82.35% · 34 Rules",       kri:"UK-K11",value:"82.35%", delta:"-1.4%", region:"UK"},
+    {id:"dcrm",    icon:"🔍",rag:"na",   name:"DCRM Details",             desc:"CDE Rules by DCRM",               kri:"DCRM",  value:"9 CDEs", delta:"—",     region:"UK"},
+    {id:"it-audit",icon:"🛡️",rag:"na",  name:"IT Audit Controls",         desc:"7 Codified Controls",             kri:"WS2",   value:"7 Active",delta:"—",   region:"UK"},
+  ]},
+  {id:"CGMSE",name:"Citigroup Global Markets SE",region:"Singapore",color:"#047857",icon:"🌏",
+   scs:[{id:"sgp-dq",icon:"🌏",rag:"green",name:"SGP DQ Scorecard",desc:"Singapore Data Quality",kri:"SGP-K1",value:"94.2%",delta:"+1.2%",region:"SGP"}]},
+  {id:"CGME",name:"Citigroup Global Markets Europe",region:"CEP Region",color:"#7C3AED",icon:"🏦",
+   scs:[{id:"cep",icon:"🏦",rag:"green",name:"CEP Scorecard",desc:"Central Eastern Europe",kri:"CEP-K1",value:"91.8%",delta:"+0.6%",region:"CEP"}]},
+  {id:"ALL",name:"Cross-Entity",region:"All Regions",color:"#374151",icon:"🗄️",
+   scs:[{id:"bi-vault",icon:"🗄️",rag:"na",name:"BI Vault",desc:"Evidence Store · All Controls",kri:"VAULT",value:"142 Items",delta:"+8",region:"ALL"}]},
+];
+
+const allSC=ENTITIES.flatMap(e=>e.scs);
+let activeTab="hub", activeRag="all", collapsed={};
+
+function ragColor(r){return r==="red"?"var(--red)":r==="amber"?"var(--amber)":r==="green"?"var(--green)":"var(--muted)";}
+function ragBg(r)   {return r==="red"?"var(--red-bg)":r==="amber"?"var(--amber-bg)":r==="green"?"var(--green-bg)":"var(--bg)";}
+function ragBdr(r)  {return r==="red"?"var(--red-bdr)":r==="amber"?"var(--amber-bdr)":r==="green"?"var(--green-bdr)":"var(--border2)";}
+function ragLbl(r)  {return r==="red"?"Red":r==="amber"?"Amber":r==="green"?"Green":"N/A";}
+
+/* ── HEALTH CHECK ── */
+fetch("http://localhost:8000/health/").then(r=>r.json()).then(d=>{
+  const svcs=d.services||[];
+  document.getElementById("health").innerHTML=
+    [["tableau","T"],["vertexai","AI"],["oracle","DB"]].map(([k,l])=>{
+      const st=svcs.find(s=>s.name?.toLowerCase().replace(/\s/g,"")==k);
+      return `<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:rgba(255,255,255,.65);font-family:var(--mono)">
+        <span style="width:6px;height:6px;border-radius:50%;background:${st?.status==="ok"?"#10B981":st?.status==="down"?"#EF4444":"#6B7280"}"></span>${l}</span>`;
+    }).join("");
+}).catch(()=>{
+  document.getElementById("health").innerHTML=`<span style="font-size:9px;color:rgba(255,255,255,.4);font-family:var(--mono)">Offline</span>`;
+});
+
+/* ── TABS ── */
+function setTab(t){
+  activeTab=t;
+  ["hub","analytics","history"].forEach(id=>{
+    document.getElementById(`tab-${id}`)?.classList.toggle("active",id===t);
+    document.getElementById(`nav-${id}`)?.classList.toggle("active",id===t);
+  });
+  renderAll();
+}
+
+/* ── RENDER ── */
+function renderAll(){
+  const ct=document.getElementById("content");
+  if(activeTab==="hub")       ct.innerHTML=renderHub();
+  else if(activeTab==="analytics") ct.innerHTML=renderAnalytics();
+  else if(activeTab==="history")   ct.innerHTML=renderHistory();
+}
+
+function renderHub(){
+  const q=document.getElementById("search")?.value.toLowerCase()||"";
+  const red=allSC.filter(s=>s.rag==="red").length;
+  const amb=allSC.filter(s=>s.rag==="amber").length;
+  const grn=allSC.filter(s=>s.rag==="green").length;
+
+  let html=`
+  <div class="page-hdr">
+    <div class="breadcrumb"><span>Home</span><span>›</span><strong>Data Control</strong></div>
+    <h1>Data Control Scorecards</h1>
+    <p>Grouped by legal entity · As of April 2026 · Click Chat to open AI assistant</p>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi-tile total"><div class="kpi-tile-l">Total Scorecards</div><div class="kpi-tile-v" style="color:var(--navy)">8</div></div>
+    <div class="kpi-tile red">  <div class="kpi-tile-l">RAG Red</div>  <div class="kpi-tile-v" style="color:var(--red)">${red}</div></div>
+    <div class="kpi-tile amber"><div class="kpi-tile-l">RAG Amber</div><div class="kpi-tile-v" style="color:var(--amber)">${amb}</div></div>
+    <div class="kpi-tile green"><div class="kpi-tile-l">RAG Green</div><div class="kpi-tile-v" style="color:var(--green)">${grn}</div></div>
+  </div>
+  <div class="toolbar">
+    <span style="font-size:11px;color:var(--muted);font-weight:500">Filter:</span>
+    ${["all","red","amber","green"].map(f=>`
+      <button class="filter-btn ${activeRag===f?("red"===f?"active-red":"amber"===f?"active-amber":"green"===f?"active-green":"active"):""}"
+        onclick="setRag('${f}')">${f==="all"?"All":f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join("")}
+    <a href="connect.html" class="connect-btn">🔌 Connect New Dashboard</a>
+  </div>`;
+
+  ENTITIES.forEach(e=>{
+    const vis=e.scs.filter(sc=>{
+      return(!q||sc.name.toLowerCase().includes(q)||sc.id.includes(q))&&(activeRag==="all"||sc.rag===activeRag);
+    });
+    if(!vis.length&&(q||activeRag!=="all"))return;
+    const open=!collapsed[e.id];
+    html+=`<div class="entity-section">
+      <div class="entity-hdr" onclick="toggleE('${e.id}')">
+        <div class="entity-ico" style="background:${e.color}18;border:1px solid ${e.color}28">${e.icon}</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="entity-name" style="color:${e.color}">${e.id}</span>
+            <span class="entity-full">${e.name}</span>
+            <span class="entity-region" style="background:${e.color}12;color:${e.color};border-color:${e.color}25">${e.region}</span>
+          </div>
+        </div>
+        <span class="entity-count">${vis.length} scorecard${vis.length!==1?"s":""}</span>
+        <span class="chevron ${open?"open":""}">›</span>
+      </div>`;
+    if(open){
+      html+=`<div class="sc-grid">`;
+      vis.forEach(sc=>{
+        const rc=ragColor(sc.rag);
+        const deltaClass=sc.delta.startsWith("+")&&sc.rag!=="red"?"up":sc.delta.startsWith("-")?"down":"flat";
+        html+=`
+        <div class="sc-card rag-${sc.rag}">
+          <div class="sc-top">
+            <div class="sc-icon" style="background:${ragBg(sc.rag)};border:1px solid ${ragBdr(sc.rag)}">${sc.icon}</div>
+            <span class="rag-pill ${sc.rag}">${ragLbl(sc.rag)}</span>
+          </div>
+          <div>
+            <div class="sc-name">${sc.name}</div>
+            <div class="sc-desc">${sc.desc}</div>
+          </div>
+          <div class="sc-metric">
+            <div>
+              <div class="sc-kri">${sc.kri}</div>
+              <div class="sc-val" style="color:${rc}">${sc.value}</div>
+            </div>
+            <span class="sc-delta ${deltaClass}">${sc.delta}</span>
+          </div>
+          <div class="sc-footer">
+            <span class="sc-region">${sc.region}</span>
+            <div class="sc-actions">
+              <button class="btn-sm btn-preview" onclick="openModal('${sc.id}')">👁 Preview</button>
+              <button class="btn-sm btn-chat" onclick="openChat('${sc.id}','${sc.name}')">🤖 Chat</button>
+            </div>
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  });
+  return html;
+}
+
+function renderAnalytics(){
+  return `
+  <div class="page-hdr">
+    <h1>Analytics</h1>
+    <p>KRI performance &amp; AI usage across all legal entities</p>
+  </div>
+  <div class="analytics-stats">
+    ${[{l:"Sessions",v:"47",d:"+12% this month",up:true},
+       {l:"AI Messages",v:"213",d:"+24% this month",up:true},
+       {l:"Avg Response",v:"1.2s",d:"−18% this month",up:false},
+       {l:"Active Users",v:"6",d:"+2 this month",up:true}].map(s=>`
+    <div class="a-stat">
+      <div class="a-stat-l">${s.l}</div>
+      <div class="a-stat-v">${s.v}</div>
+      <div class="a-stat-d ${s.up?"up":"dn"}">${s.d}</div>
+    </div>`).join("")}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="chart-box">
+      <div class="chart-box-hdr">
+        <div class="chart-box-title">UK KRI RAG Status — Feb 2026</div>
+        <div class="chart-box-sub">UK-K40 to UK-K45 current status</div>
+      </div>
+      <div class="chart-box-body">
+        ${[["UK-K40","95%","red"],["UK-K41","8%","red"],["UK-K42","89%","red"],["UK-K43","2.47 L2","red"],["UK-K44","N/A","na"],["UK-K45","N/A","na"]].map(([k,v,r])=>`
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:10px;font-weight:700;font-family:var(--mono);width:54px;color:var(--navy)">${k}</span>
+          <div style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;border:1px solid var(--border)">
+            <div style="height:100%;border-radius:3px;background:${r==="red"?"var(--red)":r==="amber"?"var(--amber)":r==="green"?"var(--green)":"var(--border2)"};
+                         width:${r==="na"?"0":r==="red"?Math.random()*30+20:80}%"></div>
+          </div>
+          <span style="font-size:10px;font-weight:700;width:60px;text-align:right;font-family:var(--mono);
+                        color:${r==="red"?"var(--red)":r==="amber"?"var(--amber)":r==="green"?"var(--green)":"var(--sub)"}">${v}</span>
+          <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;
+                        background:${r==="red"?"var(--red-bg)":r==="amber"?"var(--amber-bg)":r==="green"?"var(--green-bg)":"var(--bg)"};
+                        color:${r==="red"?"var(--red)":r==="amber"?"var(--amber)":r==="green"?"var(--green)":"var(--sub)"};
+                        border:1px solid ${r==="red"?"var(--red-bdr)":r==="amber"?"var(--amber-bdr)":r==="green"?"var(--green-bdr)":"var(--border2)"}">
+            ${r==="na"?"N/A":r.charAt(0).toUpperCase()+r.slice(1)}</span>
+        </div>`).join("")}
+      </div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-box-hdr">
+        <div class="chart-box-title">Entity Coverage</div>
+        <div class="chart-box-sub">Controls by legal entity</div>
+      </div>
+      <div class="chart-box-body">
+        ${ENTITIES.map(e=>`
+        <div class="cov-row">
+          <span class="cov-name" style="color:${e.color}">${e.id}</span>
+          <div class="cov-bar-wrap">
+            <div class="cov-bar" style="background:${e.color};width:${e.scs.length/8*100}%"></div>
+          </div>
+          <span class="cov-cnt">${e.scs.length}</span>
+        </div>`).join("")}
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--muted)">Total: 8 active scorecards across 4 legal entities</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="chart-box">
+    <div class="chart-box-hdr">
+      <div class="chart-box-title">AI Query Distribution — Last 30 Days</div>
+      <div class="chart-box-sub">PANDAS (rule-based, instant) vs Gemini AI (LLM)</div>
+    </div>
+    <div class="chart-box-body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
+      ${[["PANDAS Queries","158","75%","var(--green)"],["Gemini AI Queries","55","25%","var(--accent)"],["Avg Confidence","0.91","91%","var(--navy)"]].map(([l,v,p,c])=>`
+      <div style="text-align:center;padding:16px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)">
+        <div style="font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">${l}</div>
+        <div style="font-size:28px;font-weight:800;color:${c};letter-spacing:-1px">${v}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${p} of queries</div>
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function renderHistory(){
+  const hist=[
+    {sc:"UK KRI Scorecard",time:"Today 15:32",msgs:8,rag:"red",entity:"CGML",sid:"a3f8b12c",id:"uk-kri"},
+    {sc:"CRMR CDE Exceptions",time:"Today 11:14",msgs:5,rag:"amber",entity:"CGML",sid:"7d2e904a",id:"crmr-cde"},
+    {sc:"KRI Dashboard",time:"Yesterday 16:45",msgs:12,rag:"amber",entity:"CGML",sid:"c91f3b77",id:"kri-dash"},
+    {sc:"SGP DQ Scorecard",time:"27 Mar 2026",msgs:3,rag:"green",entity:"CGMSE",sid:"552da011",id:"sgp-dq"},
+  ];
+  return `
+  <div class="page-hdr">
+    <h1>Chat History</h1>
+    <p>Recent AI conversations stored in Oracle DB</p>
+  </div>
+  ${hist.map(s=>`
+  <div class="hist-item" onclick="openChat('${s.id}','${s.sc}')">
+    <div class="hist-ico">💬</div>
+    <div style="flex:1">
+      <div class="hist-name">${s.sc}</div>
+      <div class="hist-meta">${s.time} · Session ${s.sid}… · ${s.entity}</div>
+    </div>
+    <span class="rag-pill ${s.rag}">${ragLbl(s.rag)}</span>
+    <span class="hist-msgs">${s.msgs} msgs</span>
+    <span style="color:var(--muted);font-size:14px">›</span>
+  </div>`).join("")}`;
+}
+
+/* ── ACTIONS ── */
+function setRag(r){activeRag=r;renderAll();}
+function toggleE(id){collapsed[id]=!collapsed[id];renderAll();}
+
+function openModal(id){
+  const sc=allSC.find(s=>s.id===id);if(!sc)return;
+  const rc=ragColor(sc.rag);
+  document.getElementById("modal-inner").innerHTML=`
+    <div class="modal-hdr">
+      <span style="font-size:24px">${sc.icon}</span>
+      <div style="flex:1">
+        <h2 style="font-size:16px;font-weight:700;color:var(--navy)">${sc.name}</h2>
+        <div style="font-size:12px;color:var(--muted)">${sc.desc}</div>
+      </div>
+      <span class="rag-pill ${sc.rag}">${ragLbl(sc.rag)}</span>
+      <button class="close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="m-stat-grid">
+        ${[["Current Value",sc.value,rc],["Delta",sc.delta,ragColor(sc.rag)],["KRI Reference",sc.kri,"var(--navy)"],["Region",sc.region,"var(--text2)"]].map(([l,v,c])=>`
+        <div class="m-stat"><div class="m-stat-l">${l}</div><div class="m-stat-v" style="color:${c}">${v}</div></div>`).join("")}
+      </div>
+      <div class="tableau-ph">
+        <div style="font-size:32px;margin-bottom:8px">📊</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:4px">Tableau Snapshot</div>
+        <div style="font-size:12px;color:var(--muted)">via <code style="font-family:var(--mono);color:var(--accent)">GET /snapshot/${sc.id}</code></div>
+        <div class="modal-actions" style="margin-top:12px">
+          <button class="modal-btn secondary">↻ Refresh</button>
+          <button class="modal-btn secondary">⬇ PDF</button>
+          <button class="modal-btn primary" onclick="closeModal();openChat('${sc.id}','${sc.name}')">🤖 Chat about this</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById("modal").style.display="flex";
+}
+
+function closeModal(e){
+  if(!e||e.target===document.getElementById("modal"))
+    document.getElementById("modal").style.display="none";
+}
+
+function openChat(id,name){
+  window.open(`chatbot.html?id=${id}&name=${encodeURIComponent(name)}`,"_blank","width=440,height=640");
+}
+
+/* ── INIT ── */
+renderAll();
+</script>
+</body>
+</html>
