@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>B&I Universal Intelligence Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ══ Enterprise Light Design System v5 ══ */
+:root{
+  --bg:#F0F2F5; --surface:#FFFFFF; --card:#FFFFFF;
+  --navy:#003B6F; --blue:#0057A8; --accent:#0066CC;
+  --blue-lt:#EBF3FF; --blue-bdr:#BFDBFE;
+  --red:#C8102E; --amber:#D97706; --green:#047857; --purple:#6D28D9;
+  --red-bg:#FEF2F2; --amber-bg:#FFFBEB; --green-bg:#ECFDF5;
+  --red-bdr:#FECACA; --amber-bdr:#FDE68A; --green-bdr:#A7F3D0;
+  --text:#111827; --text2:#374151; --muted:#6B7280; --sub:#9CA3AF;
+  --border:#E5E7EB; --border2:#D1D5DB;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+  --shadow:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 12px 32px rgba(0,0,0,.12);
+  --font:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  --r:8px; --rl:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-size:14px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);
+     display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:4px}
+.fade{animation:fd .25s ease both}
+@keyframes fd{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══ TOP BAR ══ */
+.topbar{height:52px;background:var(--navy);display:flex;align-items:center;
+  padding:0 20px;gap:14px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,59,111,.3);z-index:100}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-ico{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.15);
+           border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;font-size:13px}
+.brand-name{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.2px}
+.brand-tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;
+           background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);
+           letter-spacing:1px;border:1px solid rgba(255,255,255,.2)}
+.top-search{flex:1;max-width:340px;display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+  border-radius:var(--r);padding:6px 12px}
+.top-search input{background:none;border:none;outline:none;color:#fff;
+                  font-size:12px;flex:1;font-family:inherit}
+.top-search input::placeholder{color:rgba(255,255,255,.4)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.health-row{display:flex;gap:5px;padding:4px 10px;background:rgba(255,255,255,.08);
+            border-radius:6px;border:1px solid rgba(255,255,255,.12)}
+.health-dot{display:flex;align-items:center;gap:3px;font-size:9px;
+            color:rgba(255,255,255,.65);font-family:var(--mono)}
+.health-dot span{width:6px;height:6px;border-radius:50%}
+.user-chip{display:flex;align-items:center;gap:8px;padding:3px 10px 3px 4px;
+           background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:6px}
+.user-av{width:26px;height:26px;border-radius:5px;background:rgba(255,255,255,.2);
+         display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff}
+.user-name{font-size:11px;font-weight:500;color:rgba(255,255,255,.9)}
+
+/* ══ BODY LAYOUT ══ */
+.layout{flex:1;display:grid;grid-template-columns:260px 1fr 360px;overflow:hidden;min-height:0}
+
+/* ══ LEFT PANEL ══ */
+.left{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.left-head{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.left-title{font-size:12px;font-weight:700;color:var(--navy);letter-spacing:-.2px;margin-bottom:10px}
+.add-dash-btn{width:100%;padding:8px;border-radius:var(--r);border:1.5px dashed var(--border2);
+  background:var(--bg);color:var(--muted);font-family:inherit;font-size:12px;
+  font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.add-dash-btn:hover{border-color:var(--navy);color:var(--navy);background:var(--blue-lt)}
+.left-list{flex:1;overflow-y:auto;padding:8px}
+.dash-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--r);
+  cursor:pointer;margin-bottom:2px;transition:all .15s;border:1px solid transparent}
+.dash-item:hover{background:var(--bg);border-color:var(--border)}
+.dash-item.active{background:var(--blue-lt);border-color:var(--blue-bdr)}
+.dash-ico{width:32px;height:32px;border-radius:7px;display:grid;place-items:center;font-size:14px;flex-shrink:0}
+.dash-meta{flex:1;min-width:0}
+.dash-name{font-size:12px;font-weight:600;color:var(--navy);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dash-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.dash-ts{font-size:9px;color:var(--sub);margin-top:2px;font-family:var(--mono)}
+.dash-badges{display:flex;gap:3px;margin-top:4px}
+.dbadge{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;border:1px solid}
+.dbadge.t{background:var(--blue-lt);border-color:var(--blue-bdr);color:var(--accent)}
+.dbadge.r{background:var(--red-bg);border-color:var(--red-bdr);color:var(--red)}
+.dbadge.g{background:var(--green-bg);border-color:var(--green-bdr);color:var(--green)}
+.dash-del{width:22px;height:22px;border-radius:4px;border:none;background:none;
+  cursor:pointer;color:var(--sub);font-size:12px;display:grid;place-items:center;
+  flex-shrink:0;transition:all .15s;opacity:0}
+.dash-item:hover .dash-del{opacity:1}
+.dash-del:hover{background:var(--red-bg);color:var(--red)}
+.left-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:24px;color:var(--sub)}
+.left-empty .ico{font-size:36px;margin-bottom:10px;opacity:.4}
+.left-empty p{font-size:11px;line-height:1.7}
+
+/* ══ CENTRE PANEL ══ */
+.centre{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.centre-tabs{background:var(--surface);border-bottom:1px solid var(--border);display:flex;padding:0 20px;flex-shrink:0}
+.ctab{padding:13px 18px;border:none;background:none;cursor:pointer;font-size:12px;
+  font-family:inherit;color:var(--muted);transition:all .15s;margin-bottom:-1px;font-weight:400}
+.ctab.on{color:var(--accent);font-weight:600;border-bottom:2px solid var(--accent)}
+.centre-body{flex:1;overflow-y:auto;padding:20px}
+.no-dash{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;text-align:center;color:var(--muted)}
+.no-dash .ico{font-size:52px;margin-bottom:16px;opacity:.35}
+.no-dash h2{font-size:16px;font-weight:700;color:var(--text2);margin-bottom:8px}
+.no-dash p{font-size:12px;line-height:1.7;max-width:320px;margin-bottom:20px}
+.start-btn{padding:10px 22px;border-radius:var(--r);border:none;cursor:pointer;
+  font-family:inherit;font-size:13px;font-weight:600;background:var(--navy);color:#fff;box-shadow:var(--shadow-sm)}
+.start-btn:hover{background:var(--blue)}
+
+/* Overview / KPI / Insight / Schema cards — same as v4 */
+.ov-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.ov-card{background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);padding:14px 16px;box-shadow:var(--shadow-sm)}
+.ov-lbl{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.ov-val{font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1}
+.ov-sub{font-size:10px;color:var(--muted);margin-top:4px}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+.kpi-card{background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);padding:14px 16px;box-shadow:var(--shadow-sm);border-left:4px solid var(--border2)}
+.kpi-card.breaching{border-left-color:var(--red);background:var(--red-bg)}
+.kpi-card.at_risk{border-left-color:var(--amber)}.kpi-card.on_track{border-left-color:var(--green)}
+.kpi-name{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-val{font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:-.5px}
+.kpi-val.red{color:var(--red)}.kpi-val.amber{color:var(--amber)}.kpi-val.green{color:var(--green)}.kpi-val.gray{color:var(--muted)}
+.kpi-meta{display:flex;align-items:center;gap:6px;margin-top:5px}
+.kpi-trend{font-size:10px;font-weight:600}
+.kpi-trend.up{color:var(--green)}.kpi-trend.down{color:var(--red)}.kpi-trend.flat{color:var(--muted)}
+.kpi-badge{font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px;border:1px solid;margin-left:auto}
+.kpi-badge.breaching{background:var(--red-bg);border-color:var(--red-bdr);color:var(--red)}
+.kpi-badge.at_risk{background:var(--amber-bg);border-color:var(--amber-bdr);color:var(--amber)}
+.kpi-badge.on_track{background:var(--green-bg);border-color:var(--green-bdr);color:var(--green)}
+.insight-card{background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow-sm);border-left:4px solid}
+.insight-card.red{border-left-color:var(--red);background:var(--red-bg)}
+.insight-card.amber{border-left-color:var(--amber)}.insight-card.green{border-left-color:var(--green)}
+.insight-card.blue{border-left-color:var(--accent)}
+.ic-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px}
+.ic-title{font-size:12px;font-weight:600;color:var(--navy);flex:1}
+.ic-sev{font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;border:1px solid;flex-shrink:0}
+.ic-sev.critical,.ic-sev.high{background:var(--red-bg);border-color:var(--red-bdr);color:var(--red)}
+.ic-sev.medium{background:var(--amber-bg);border-color:var(--amber-bdr);color:var(--amber)}
+.ic-sev.info{background:var(--blue-lt);border-color:var(--blue-bdr);color:var(--accent)}
+.ic-detail{font-size:11px;color:var(--muted);line-height:1.5}
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sec-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.schema-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.7;white-space:pre-wrap;max-height:240px;overflow-y:auto}
+.tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.tag{font-size:10px;font-weight:600;font-family:var(--mono);padding:3px 8px;border-radius:4px;border:1px solid}
+.tag.dim{background:var(--blue-lt);border-color:var(--blue-bdr);color:var(--accent)}
+.tag.msr{background:var(--green-bg);border-color:var(--green-bdr);color:var(--green)}
+.tag.time{background:#FEF9C3;border-color:#FDE047;color:#92400E}
+.tag.status{background:var(--red-bg);border-color:var(--red-bdr);color:var(--red)}
+
+/* ══ RIGHT PANEL — Chat ══ */
+.right{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.right-head{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--navy)}
+.rh-title{font-size:12px;font-weight:700;color:#fff}
+.rh-sub{font-size:10px;color:rgba(255,255,255,.55);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rh-modes{display:flex;gap:3px;margin-top:8px}
+.rmode{font-size:9px;font-weight:700;padding:3px 8px;border-radius:5px;border:1px solid rgba(255,255,255,.2);
+  cursor:pointer;font-family:inherit;color:rgba(255,255,255,.7);background:rgba(255,255,255,.08);transition:all .15s}
+.rmode.on{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.35)}
+.rh-right{margin-left:auto;display:flex;gap:5px}
+.rh-btn{width:26px;height:26px;border-radius:5px;border:1px solid rgba(255,255,255,.2);cursor:pointer;
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);display:grid;place-items:center;font-size:11px;transition:all .15s}
+.rh-btn:hover{background:rgba(255,255,255,.18);color:#fff}
+.tier-bar{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg);
+  border-bottom:1px solid var(--border);font-size:10px;flex-shrink:0}
+.tier-lbl{color:var(--sub);font-family:var(--mono)}
+.tier-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid}
+.tier-badge.T1{background:var(--green-bg);border-color:var(--green-bdr);color:var(--green)}
+.tier-badge.T2{background:#FEF9C3;border-color:#FDE047;color:#92400E}
+.tier-badge.T3{background:var(--blue-lt);border-color:var(--blue-bdr);color:var(--accent)}
+.tier-badge.T0{background:var(--bg);border-color:var(--border2);color:var(--sub)}
+.msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.mwrap{display:flex;flex-direction:column;max-width:98%}
+.mwrap.user{align-self:flex-end;align-items:flex-end}
+.mwrap.ai{align-self:flex-start;align-items:flex-start}
+.msender{font-size:9px;color:var(--sub);margin-bottom:2px;font-family:var(--mono)}
+.cmsg{font-size:12px;line-height:1.6;padding:9px 12px;border-radius:10px;word-break:break-word}
+.cmsg.user{background:var(--navy);color:#fff;border-bottom-right-radius:3px}
+.cmsg.ai{background:var(--surface);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:3px;box-shadow:var(--shadow-sm)}
+.cmsg.error{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr)}
+.msource{font-size:9px;color:var(--sub);margin-top:4px;font-family:var(--mono);display:flex;align-items:center;gap:4px}
+.msource-dot{width:4px;height:4px;border-radius:50%;background:var(--green)}
+.chat-chart{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-top:4px;box-shadow:var(--shadow-sm)}
+.chat-chart canvas{max-height:160px!important}
+.chat-chart-title{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.chips{padding:5px 10px 6px;display:flex;flex-wrap:wrap;gap:4px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.chip{font-size:10px;font-weight:500;color:var(--navy);background:var(--blue-lt);border:1px solid var(--blue-bdr);
+  padding:3px 9px;border-radius:10px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.chip:hover{background:var(--blue-bdr);border-color:var(--navy)}
+.inp-row{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:flex-end;background:var(--surface);flex-shrink:0}
+textarea.inp{flex:1;border:1.5px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-size:12px;
+  font-family:inherit;resize:none;line-height:1.5;max-height:60px;color:var(--text);outline:none;background:var(--surface);transition:border .15s}
+textarea.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,102,204,.08)}
+textarea.inp::placeholder{color:var(--sub)}
+.typing{display:flex;align-items:center;gap:4px;padding:8px 12px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--border2);animation:tb .8s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+.send-btn{width:34px;height:34px;border-radius:var(--r);border:none;cursor:pointer;
+  background:var(--navy);display:grid;place-items:center;transition:all .15s;box-shadow:0 2px 6px rgba(0,59,111,.25)}
+.send-btn:hover{background:var(--blue)}.send-btn:disabled{opacity:.4;cursor:not-allowed}
+.send-btn svg{width:13px;height:13px;stroke:#fff;stroke-width:2;fill:none}
+.chat-foot{padding:4px 12px;font-size:9px;color:var(--sub);text-align:center;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+
+/* ══ STATUS BAR (bottom) ══ */
+.status-bar{height:24px;background:var(--navy);display:flex;align-items:center;padding:0 16px;gap:16px;
+  flex-shrink:0;font-size:9px;font-family:var(--mono);color:rgba(255,255,255,.6)}
+.status-bar .sb-dot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:3px}
+.status-bar .sb-dot.ok{background:#34D399}.status-bar .sb-dot.err{background:#F87171}
+.status-bar .sb-dot.off{background:#6B7280}
+.sb-sep{width:1px;height:12px;background:rgba(255,255,255,.15)}
+.sb-right{margin-left:auto}
+
+/* ══ MODAL ══ */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{width:100%;max-width:520px;background:var(--surface);border-radius:var(--rl);
+  box-shadow:var(--shadow-lg);border:1px solid var(--border);overflow:hidden}
+.mhdr{padding:16px 20px;border-bottom:1px solid var(--border);background:var(--navy);
+  display:flex;align-items:center;justify-content:space-between}
+.mhdr h3{font-size:14px;font-weight:700;color:#fff}
+.mbody{padding:20px}
+.mform-g{margin-bottom:12px}
+.mform-g label{display:block;font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.4px;margin-bottom:5px}
+.m-inp{width:100%;border:1.5px solid var(--border2);border-radius:var(--r);padding:9px 12px;
+  font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border .15s}
+.m-inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,102,204,.08)}
+.m-inp::placeholder{color:var(--sub)}
+.m-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.m-hint{font-size:10px;color:var(--sub);margin-top:3px;font-family:var(--mono)}
+.m-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.m-btn-cancel{padding:8px 16px;border-radius:var(--r);border:1.5px solid var(--border2);background:var(--surface);
+  color:var(--text2);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.m-btn-ok{padding:8px 20px;border-radius:var(--r);border:none;background:var(--navy);color:#fff;
+  font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-sm);
+  display:flex;align-items:center;gap:6px}
+.m-btn-ok:disabled{opacity:.5;cursor:not-allowed}
+.m-spinner{width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.m-progress{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}
+.mp-step{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11px;transition:all .2s}
+.mp-ico{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;
+  font-size:9px;flex-shrink:0;background:var(--bg);border:1px solid var(--border)}
+.mp-step.done .mp-ico{background:var(--green-bg);border-color:var(--green-bdr);color:var(--green)}
+.mp-step.active .mp-ico{background:var(--blue-lt);border-color:var(--blue-bdr);color:var(--navy)}
+.mp-step.active{color:var(--navy);font-weight:600}
+.mp-step.error .mp-ico{background:var(--red-bg);border-color:var(--red-bdr);color:var(--red)}
+.mp-step.error{color:var(--red)}
+.mp-step.wait{color:var(--sub)}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-ico">✦</div>
+    <div><div class="brand-name">B&I Universal Intelligence Hub</div></div>
+    <span class="brand-tag">v5.0</span>
+  </div>
+  <div class="top-search">
+    <svg width="12" height="12" fill="none" stroke="rgba(255,255,255,.5)" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+    </svg>
+    <input id="top-search" placeholder="Ask anything across all dashboards…" onkeydown="if(event.key==='Enter')globalQuery()"/>
+  </div>
+  <div class="top-right">
+    <div class="health-row" id="health-row">
+      <span class="health-dot"><span style="background:#6B7280"></span>T</span>
+      <span class="health-dot"><span style="background:#6B7280"></span>AI</span>
+      <span class="health-dot"><span style="background:#6B7280"></span>DB</span>
+    </div>
+    <div class="user-chip"><div class="user-av">PG</div><span class="user-name">PG23137</span></div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- LEFT -->
+  <div class="left">
+    <div class="left-head">
+      <div class="left-title">Connected Dashboards</div>
+      <button class="add-dash-btn" onclick="showModal()">＋ Connect New Dashboard</button>
+    </div>
+    <div class="left-list" id="dash-list">
+      <div class="left-empty"><div class="ico">📊</div><p>No dashboards connected.<br>Click above to connect any Tableau dashboard.</p></div>
+    </div>
+  </div>
+
+  <!-- CENTRE -->
+  <div class="centre">
+    <div class="centre-tabs" id="ctabs" style="display:none">
+      <button class="ctab on" onclick="setCTab('overview',this)">Overview</button>
+      <button class="ctab"    onclick="setCTab('kpis',this)">KPIs</button>
+      <button class="ctab"    onclick="setCTab('insights',this)">Insights</button>
+      <button class="ctab"    onclick="setCTab('schema',this)">Schema</button>
+    </div>
+    <div class="centre-body" id="centre-body">
+      <div class="no-dash">
+        <div class="ico">🧠</div>
+        <h2>Universal Intelligence Hub</h2>
+        <p>Connect any Tableau dashboard — KRI, scorecard, sales, compliance, operations. The system extracts data, understands its structure, and enables intelligent chat.</p>
+        <button class="start-btn" onclick="showModal()">🔌 Connect Your First Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Chat (inline, NOT popup) -->
+  <div class="right">
+    <div class="right-head">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="flex:1;min-width:0">
+          <div class="rh-title">Intelligence Chat</div>
+          <div class="rh-sub" id="chat-scope">Select a dashboard to start</div>
+        </div>
+        <div class="rh-right">
+          <button class="rh-btn" onclick="clearChat()" title="Clear">↺</button>
+          <button class="rh-btn" onclick="exportChat()" title="Export">⬇</button>
+        </div>
+      </div>
+      <div class="rh-modes">
+        <button class="rmode"    id="m-t1"   onclick="setMode('t1')">Tier 1 · PANDAS</button>
+        <button class="rmode"    id="m-t2"   onclick="setMode('t2')">Tier 2 · SEMANTIC</button>
+        <button class="rmode"    id="m-t3"   onclick="setMode('t3')">Tier 3 · GEMINI</button>
+        <button class="rmode on" id="m-auto" onclick="setMode('auto')">AUTO</button>
+      </div>
+    </div>
+    <div class="tier-bar">
+      <span class="tier-lbl">Last answer tier:</span>
+      <span class="tier-badge T0" id="tier-badge">—</span>
+      <span id="tier-latency" style="color:var(--sub);font-family:var(--mono);font-size:9px"></span>
+    </div>
+    <div class="msgs" id="msgs"></div>
+    <div class="chips" id="chips" style="display:none"></div>
+    <div class="inp-row">
+      <textarea class="inp" id="inp" rows="1" placeholder="Ask anything about the selected dashboard…"></textarea>
+      <button class="send-btn" id="send-btn">
+        <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+      </button>
+    </div>
+    <div class="chat-foot" id="chat-foot">Vertex AI Gemini · TF-IDF Semantic · Pandas Direct · Oracle Audit</div>
+  </div>
+</div>
+
+<!-- STATUS BAR — real-time system status -->
+<div class="status-bar" id="status-bar">
+  <span><span class="sb-dot off" id="sb-api"></span>API</span>
+  <span class="sb-sep"></span>
+  <span id="sb-dashboards">0 dashboards</span>
+  <span class="sb-sep"></span>
+  <span id="sb-activity">Ready</span>
+  <span class="sb-right" id="sb-time"></span>
+</div>
+
+<!-- ONBOARD MODAL -->
+<div class="overlay" id="modal" style="display:none" onclick="if(event.target===this)hideModal()">
+  <div class="modal">
+    <div class="mhdr">
+      <h3>🔌 Connect Dashboard</h3>
+      <button onclick="hideModal()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.7);font-size:18px">×</button>
+    </div>
+    <div class="mbody">
+      <div class="mform-g">
+        <label>TABLEAU VIEW ID *</label>
+        <input class="m-inp" id="m-view-id" placeholder="c69d5ca6-1849-4542-a7c5-25f4ddde4a8b"/>
+        <div class="m-hint">Paste the view_id from the Tableau dashboard URL</div>
+      </div>
+      <div class="m-row">
+        <div class="mform-g">
+          <label>SOURCE ID *</label>
+          <input class="m-inp" id="m-src-id" placeholder="sales-q1"/>
+        </div>
+        <div class="mform-g">
+          <label>DISPLAY NAME</label>
+          <input class="m-inp" id="m-src-name" placeholder="Sales Q1 Dashboard"/>
+        </div>
+      </div>
+      <div class="mform-g">
+        <label>ACTION FILTERS <span style="font-weight:400;color:var(--sub)">(optional JSON)</span></label>
+        <input class="m-inp" id="m-filters" placeholder='{"MONTH(Date)": "Feb-26"}'/>
+      </div>
+
+      <div class="m-progress" id="m-progress" style="display:none">
+        <div class="mp-step wait" id="mp1"><div class="mp-ico">1</div><span>Validating configuration</span></div>
+        <div class="mp-step wait" id="mp2"><div class="mp-ico">2</div><span>Extracting data (CSV → REST → Image)</span></div>
+        <div class="mp-step wait" id="mp3"><div class="mp-ico">3</div><span>Analysing visual structure</span></div>
+        <div class="mp-step wait" id="mp4"><div class="mp-ico">4</div><span>Building semantic layer + TF-IDF index</span></div>
+        <div class="mp-step wait" id="mp5"><div class="mp-ico">5</div><span>Generating intelligence questions</span></div>
+        <div class="mp-step wait" id="mp6"><div class="mp-ico">6</div><span>Building universal schema</span></div>
+        <div class="mp-step wait" id="mp7"><div class="mp-ico">7</div><span>Caching results</span></div>
+      </div>
+
+      <div class="m-actions">
+        <button class="m-btn-cancel" onclick="hideModal()">Cancel</button>
+        <button class="m-btn-cancel" onclick="loadDemo()">🧪 Demo (No Tableau)</button>
+        <button class="m-btn-ok" id="m-ok" onclick="doOnboard()">
+          <span id="m-ok-txt">Connect &amp; Analyse</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════ STATE ══════ */
+const API = "http://localhost:8000";
+let dashboards = {};
+let activeId   = null;
+let activeCTab = "overview";
+let chatMode   = "auto";
+let chatHistory= [];
+let chatIdx    = 0;
+let _sseSource = null;
+
+/* ══════ CLOCK + STATUS BAR ══════ */
+function updateClock(){
+  const now=new Date();
+  document.getElementById("sb-time").textContent=
+    now.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})+"  "+
+    now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+}
+updateClock(); setInterval(updateClock,1000);
+
+function updateStatusBar(){
+  document.getElementById("sb-dashboards").textContent=
+    Object.keys(dashboards).length+" dashboard"+(Object.keys(dashboards).length!==1?"s":"");
+}
+
+/* ══════ HEALTH CHECK ══════ */
+function checkHealth(){
+  fetch(`${API}/health/`).then(r=>r.json()).then(d=>{
+    const svcs=d.services||[];
+    const row=document.getElementById("health-row");
+    row.innerHTML=[["tableau","T"],["vertexai","AI"],["oracle","DB"]].map(([k,l])=>{
+      const s=svcs.find(x=>x.name?.toLowerCase().replace(/\s/g,"")==k);
+      const c=s?.status==="ok"?"#34D399":s?.status==="down"?"#F87171":"#6B7280";
+      return `<span class="health-dot"><span style="background:${c}"></span>${l}</span>`;
+    }).join("");
+    // Status bar API dot
+    const apiDot=document.getElementById("sb-api");
+    apiDot.className="sb-dot ok";
+    document.getElementById("sb-activity").textContent="API connected";
+  }).catch(()=>{
+    document.getElementById("sb-api").className="sb-dot err";
+    document.getElementById("sb-activity").textContent="API offline — start uvicorn on port 8000";
+  });
+}
+checkHealth(); setInterval(checkHealth,30000);
+
+/* ══════ DEMO DATA ══════ */
+const DEMO = {
+  source_id:"demo-kri", source_name:"UK KRI Scorecard (Demo)",
+  dashboard_type:"KPI Scorecard (RAG/Threshold)", extraction_strategy:"csv",
+  total_rows:18, total_cols:8,
+  onboarded_at:new Date().toISOString(),
+  narrative:"UK KRI Scorecard contains 18 records across 8 fields. 4 KPIs breaching thresholds. CURRENT_VALUE shows downward trend over 3 periods (−8.2%).",
+  kpis:[
+    {name:"UK-K41: % DCs meeting SLA",current_val:0.08,threshold:0.70,direction:"higher_is_better",status:"breaching",trend:"deteriorating",pct_change:-57.9},
+    {name:"UK-K40: % high-risk DCs",current_val:0.95,threshold:0.80,direction:"lower_is_better",status:"breaching",trend:"stable",pct_change:+1.1},
+    {name:"UK-K42: % open DCs",current_val:0.89,threshold:0.65,direction:"lower_is_better",status:"breaching",trend:"stable",pct_change:+4.7},
+    {name:"SGP-K1: DQ Score",current_val:0.94,threshold:0.90,direction:"higher_is_better",status:"on_track",trend:"stable",pct_change:+1.1},
+  ],
+  anomalies:[
+    {signal_type:"breach",severity:"critical",description:"UK-K41 CURRENT_VALUE (0.08) critically below threshold (0.70)",col:"CURRENT_VALUE",context:"Direction: higher_is_better"},
+  ],
+  temporal:[{time_col:"REPORT_MONTH",measure_col:"CURRENT_VALUE",trend_dir:"down",pct_change:-8.2,n_periods:3,min_period:"Jan-26",max_period:"Mar-26",latest_val:0.08,baseline_val:0.19}],
+  entities:[{name:"KRI_ID",entity_type:"kri",sample_values:["UK-K40","UK-K41","UK-K42","UK-K43"],importance:0.92}],
+  capabilities:{time_series:true,geographic:false,rag_status:true,thresholds:true,multi_measure:false},
+  questions:["Which KRIs are breaching?","Show CURRENT_VALUE trend","RAG_STATUS distribution","Why is UK-K41 so low?","Compare CURRENT_VALUE vs RED_THRESHOLD","Which KRI is at highest risk?","Give me a dashboard summary"],
+};
+
+/* ══════ ONBOARD — SSE REAL-TIME PROGRESS ══════ */
+function showModal(){ document.getElementById("modal").style.display="flex"; }
+function hideModal(){ document.getElementById("modal").style.display="none"; resetModal(); }
+function resetModal(){
+  document.getElementById("m-progress").style.display="none";
+  document.getElementById("m-ok").disabled=false;
+  document.getElementById("m-ok-txt").textContent="Connect & Analyse";
+  if(_sseSource){ _sseSource.close(); _sseSource=null; }
+  for(let i=1;i<=7;i++){
+    const el=document.getElementById(`mp${i}`);
+    if(el){ el.className="mp-step wait"; el.querySelector("span").textContent=["Validating configuration","Extracting data (CSV → REST → Image)","Analysing visual structure","Building semantic layer + TF-IDF index","Generating intelligence questions","Building universal schema","Caching results"][i-1]; }
+  }
+}
+
+async function doOnboard(){
+  const vid   = document.getElementById("m-view-id").value.trim();
+  const sid   = document.getElementById("m-src-id").value.trim();
+  const sname = document.getElementById("m-src-name").value.trim();
+  const fraw  = document.getElementById("m-filters").value.trim();
+  if(!sid){ alert("Source ID is required"); return; }
+  let filters={};
+  if(fraw){try{filters=JSON.parse(fraw);}catch(e){alert("Invalid JSON in filters");return;}}
+
+  document.getElementById("m-ok").disabled=true;
+  document.getElementById("m-ok-txt").innerHTML='<div class="m-spinner"></div> Analysing…';
+  document.getElementById("m-progress").style.display="block";
+  document.getElementById("sb-activity").textContent="Onboarding "+sid+"…";
+
+  // Connect SSE for real-time progress
+  try{
+    _sseSource=new EventSource(`${API}/progress/${encodeURIComponent(sid)}`);
+    _sseSource.onmessage=function(ev){
+      try{
+        const d=JSON.parse(ev.data);
+        // Update all steps
+        for(let i=1;i<=7;i++){
+          const el=document.getElementById(`mp${i}`);
+          if(!el) continue;
+          if(i<d.step) el.className="mp-step done";
+          else if(i===d.step){
+            el.className=d.status==="error"?"mp-step error":"mp-step active";
+            if(d.label) el.querySelector("span").textContent=d.label;
+          } else el.className="mp-step wait";
+        }
+        if(d.status==="done"||d.status==="error"){
+          _sseSource.close(); _sseSource=null;
+        }
+      }catch(e){}
+    };
+    _sseSource.onerror=function(){ if(_sseSource){_sseSource.close();_sseSource=null;} };
+  }catch(e){/* SSE not available — fallback to no live progress */}
+
+  // Fire the actual onboard call
+  try{
+    const res=await fetch(`${API}/intelligence/onboard`,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({source_id:sid,source_name:sname||sid,view_id:vid,filters})
+    });
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.detail||`HTTP ${res.status}`);}
+    const data=await res.json();
+    registerDashboard(data);
+    hideModal();
+    selectDash(data.source_id);
+    document.getElementById("sb-activity").textContent="Onboarded: "+sid;
+  }catch(err){
+    alert(`Onboarding failed:\n${err.message}`);
+    document.getElementById("sb-activity").textContent="Onboard failed: "+sid;
+    resetModal();
+  }
+}
+
+async function loadDemo(){
+  document.getElementById("m-ok").disabled=true;
+  document.getElementById("m-ok-txt").innerHTML='<div class="m-spinner"></div> Loading…';
+  document.getElementById("m-progress").style.display="block";
+  for(let i=1;i<=7;i++){ await new Promise(r=>setTimeout(r,120)); const el=document.getElementById(`mp${i}`);if(el)el.className="mp-step done"; }
+  registerDashboard(DEMO);
+  hideModal();
+  selectDash(DEMO.source_id);
+}
+
+/* ══════ DASHBOARD REGISTRY ══════ */
+function registerDashboard(data){
+  dashboards[data.source_id]={
+    schema:    data,
+    questions: data.questions||[],
+    insights:  buildInsights(data),
+  };
+  renderDashList();
+  updateStatusBar();
+}
+
+function buildInsights(data){
+  const ins=[];
+  if(data.narrative) ins.push({type:"summary",severity:"info",color:"blue",title:"Dashboard Summary",detail:data.narrative,category:"summary"});
+  (data.anomalies||[]).forEach(a=>{
+    const col={"critical":"red","high":"red","medium":"amber","low":"blue"};
+    ins.push({type:a.signal_type,severity:a.severity,color:col[a.severity]||"blue",title:a.description,detail:a.context||"",category:"anomaly"});
+  });
+  (data.kpis||[]).filter(k=>k.status==="breaching").forEach(k=>{
+    ins.push({type:"kpi_breach",severity:"critical",color:"red",title:`${k.name} breaching threshold`,
+      detail:`Current: ${k.current_val} | Threshold: ${k.threshold} | ${k.trend}`,category:"kpi"});
+  });
+  return ins;
+}
+
+function fmtTime(iso){
+  if(!iso)return"";
+  try{const d=new Date(iso);return d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})+" "+d.toLocaleDateString("en-GB",{day:"2-digit",month:"short"});}
+  catch(e){return iso.slice(11,16)||"";}
+}
+
+function renderDashList(){
+  const el=document.getElementById("dash-list");
+  const ids=Object.keys(dashboards);
+  if(!ids.length){
+    el.innerHTML=`<div class="left-empty"><div class="ico">📊</div><p>No dashboards connected.<br>Click above to connect any Tableau dashboard.</p></div>`;
+    return;
+  }
+  el.innerHTML=ids.map(sid=>{
+    const d=dashboards[sid].schema;
+    const caps=d.capabilities||{};
+    const badges=[];
+    if(caps.time_series) badges.push(`<span class="dbadge t">T</span>`);
+    if(d.anomalies?.some(a=>a.severity==="critical")) badges.push(`<span class="dbadge r">!</span>`);
+    if(d.kpis?.some(k=>k.status==="on_track")) badges.push(`<span class="dbadge g">✓</span>`);
+    const breachCnt=(d.kpis||[]).filter(k=>k.status==="breaching").length;
+    return `<div class="dash-item ${activeId===sid?"active":""}" onclick="selectDash('${sid}')">
+      <div class="dash-ico" style="background:#EBF3FF;border:1px solid #BFDBFE">📊</div>
+      <div class="dash-meta">
+        <div class="dash-name">${esc(d.source_name||sid)}</div>
+        <div class="dash-sub">${esc(d.dashboard_type||"")} · ${d.total_rows||0}r</div>
+        <div class="dash-ts">${fmtTime(d.onboarded_at)}</div>
+        <div class="dash-badges">${badges.join("")}${breachCnt?`<span class="dbadge r">${breachCnt} breach</span>`:""}</div>
+      </div>
+      <button class="dash-del" onclick="event.stopPropagation();removeDash('${sid}')" title="Remove">✕</button>
+    </div>`;
+  }).join("");
+}
+
+function removeDash(sid){
+  delete dashboards[sid];
+  if(activeId===sid){ activeId=null; renderCentre(); }
+  renderDashList(); updateStatusBar();
+  fetch(`${API}/intelligence/${sid}`,{method:"DELETE"}).catch(()=>{});
+}
+
+/* ══════ SELECT DASHBOARD ══════ */
+function selectDash(sid){
+  activeId=sid;
+  renderDashList();
+  renderCentre();
+  document.getElementById("ctabs").style.display="flex";
+  document.getElementById("chat-scope").textContent=dashboards[sid]?.schema?.source_name||sid;
+  renderChips(dashboards[sid]?.questions||[]);
+  document.getElementById("msgs").innerHTML="";
+  chatHistory=[];
+  const d=dashboards[sid].schema;
+  addMsg("ai",`Connected to <strong>${esc(d.source_name)}</strong>. ${d.total_rows||0} rows, ${(d.kpis||[]).length} KPIs, ${(d.anomalies||[]).length} anomaly signals.${(d.anomalies||[]).some(a=>a.severity==="critical")?" ⚠️ Critical anomalies detected.":""}`);
+  // Update chat footer with freshness
+  document.getElementById("chat-foot").textContent=
+    `Data: ${fmtTime(d.onboarded_at)} · Strategy: ${d.extraction_strategy||"—"} · Vertex AI · TF-IDF · Pandas · Oracle`;
+}
+
+/* ══════ CENTRE TABS ══════ */
+function setCTab(t,btn){
+  activeCTab=t;
+  document.querySelectorAll(".ctab").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  renderCentre();
+}
+
+function renderCentre(){
+  const el=document.getElementById("centre-body");
+  if(!activeId||!dashboards[activeId]){
+    el.innerHTML=`<div class="no-dash"><div class="ico">🧠</div><h2>Universal Intelligence Hub</h2><p>Connect any Tableau dashboard. The system automatically extracts data, builds a semantic model, and enables intelligent 3-tier querying.</p><button class="start-btn" onclick="showModal()">🔌 Connect Dashboard</button></div>`;
+    return;
+  }
+  const d=dashboards[activeId].schema;
+  const ins=dashboards[activeId].insights||[];
+  if(activeCTab==="overview")    renderOverview(d,ins,el);
+  else if(activeCTab==="kpis")   renderKPIs(d,el);
+  else if(activeCTab==="insights")renderInsights(ins,el);
+  else if(activeCTab==="schema") renderSchema(d,el);
+}
+
+function renderOverview(d,ins,el){
+  const kpis=d.kpis||[];
+  const breachCnt=kpis.filter(k=>k.status==="breaching").length;
+  const atRiskCnt=kpis.filter(k=>k.status==="at_risk").length;
+  el.innerHTML=`<div class="fade">
+  <div class="ov-grid">
+    ${ovCard(d.total_rows?.toLocaleString()||"0","Rows","Extracted","var(--navy)")}
+    ${ovCard(kpis.length,"KPIs","Tracked","var(--accent)")}
+    ${ovCard(breachCnt,"Breaching","Critical","var(--red)")}
+    ${ovCard((d.anomalies||[]).length,"Anomalies","Detected","var(--amber)")}
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+    ${capPill(d.capabilities?.time_series,"Time-Series")}
+    ${capPill(d.capabilities?.geographic,"Geographic")}
+    ${capPill(d.capabilities?.rag_status,"RAG Status")}
+    ${capPill(d.capabilities?.thresholds,"Thresholds")}
+    ${capPill(d.capabilities?.multi_measure,"Multi-Measure")}
+  </div>
+  <div style="font-size:10px;color:var(--sub);margin-bottom:10px;font-family:var(--mono)">
+    Data freshness: ${fmtTime(d.onboarded_at)} · Strategy: ${d.extraction_strategy||"—"} · Type: ${d.dashboard_type||"—"}
+  </div>
+  ${d.narrative?`<div class="insight-card blue"><div class="ic-title">Dashboard Summary</div><div class="ic-detail">${esc(d.narrative)}</div></div>`:""}
+  ${ins.filter(i=>i.category==="anomaly").slice(0,3).map(i=>`<div class="insight-card ${i.color}"><div class="ic-top"><div class="ic-title">${esc(i.title)}</div><span class="ic-sev ${i.severity}">${i.severity}</span></div><div class="ic-detail">${esc(i.detail)}</div></div>`).join("")}
+  </div>`;
+}
+
+function renderKPIs(d,el){
+  const kpis=d.kpis||[];
+  if(!kpis.length){el.innerHTML=`<div class="fade"><p style="color:var(--sub)">No KPIs detected in this dashboard.</p></div>`;return;}
+  el.innerHTML=`<div class="fade">
+  <div class="sec-h"><span class="sec-title">KPI Health</span><span class="sec-cnt">${kpis.length}</span></div>
+  <div class="kpi-row">
+  ${kpis.map(k=>{
+    const cls=k.status||"unknown";
+    const valColor=cls==="breaching"?"red":cls==="at_risk"?"amber":cls==="on_track"?"green":"gray";
+    const trendDir=k.trend?.includes("deteriorat")?"down":k.trend?.includes("improv")?"up":"flat";
+    return `<div class="kpi-card ${cls}">
+      <div class="kpi-name">${esc(k.name)}</div>
+      <div class="kpi-val ${valColor}">${fmtVal(k.current_val)}</div>
+      <div class="kpi-meta">
+        <span class="kpi-trend ${trendDir}">${k.pct_change!=null?(k.pct_change>0?"▲ +":"▼ ")+k.pct_change.toFixed(1)+"%":"—"}</span>
+        <span style="font-size:10px;color:var(--sub)">thr: ${fmtVal(k.threshold)}</span>
+        <span class="kpi-badge ${cls}">${cls.replace("_"," ")}</span>
+      </div>
+    </div>`;
+  }).join("")}
+  </div></div>`;
+}
+
+function renderInsights(ins,el){
+  if(!ins.length){el.innerHTML=`<div class="fade"><p style="color:var(--sub)">No insights generated yet.</p></div>`;return;}
+  el.innerHTML=`<div class="fade"><div class="sec-h"><span class="sec-title">Proactive Insights</span><span class="sec-cnt">${ins.length}</span></div>
+  ${ins.map(i=>`<div class="insight-card ${i.color}"><div class="ic-top"><div class="ic-title">${esc(i.title)}</div><span class="ic-sev ${i.severity}">${i.severity}</span></div><div class="ic-detail">${esc(i.detail)}</div></div>`).join("")}
+  </div>`;
+}
+
+function renderSchema(d,el){
+  el.innerHTML=`<div class="fade">
+  <div class="sec-h"><span class="sec-title">Column Classification</span></div>
+  <div class="tag-row">
+    ${(d.dimensions||[]).map(c=>`<span class="tag dim">📦 ${esc(c)}</span>`).join("")}
+    ${(d.measures||[]).map(c=>`<span class="tag msr">📐 ${esc(c)}</span>`).join("")}
+    ${(d.time_cols||[]).map(c=>`<span class="tag time">🕐 ${esc(c)}</span>`).join("")}
+    ${(d.status_cols||[]).map(c=>`<span class="tag status">🔴 ${esc(c)}</span>`).join("")}
+  </div>
+  ${d.entities?.length?`<div class="sec-h"><span class="sec-title">Entities Detected</span></div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px;box-shadow:var(--shadow-sm)">
+  ${(d.entities||[]).map(e=>`<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border)">
+    <span style="font-size:9px;font-weight:700;padding:1px 7px;border-radius:3px;background:var(--blue-lt);color:var(--accent);border:1px solid var(--blue-bdr)">${e.entity_type}</span>
+    <span style="font-size:11px;font-weight:600;font-family:var(--mono);color:var(--navy)">${esc(e.name)}</span>
+    <span style="font-size:10px;color:var(--muted)">${(e.sample_values||[]).slice(0,3).map(v=>`"${esc(v)}"`).join(", ")}</span>
+  </div>`).join("")}
+  </div>`:``}
+  <div class="sec-title" style="margin-bottom:6px">Full Schema JSON</div>
+  <div class="schema-box">${esc(JSON.stringify({source_id:d.source_id,dashboard_type:d.dashboard_type,total_rows:d.total_rows,capabilities:d.capabilities,kpis_count:(d.kpis||[]).length,anomalies_count:(d.anomalies||[]).length},null,2))}</div>
+  </div>`;
+}
+
+/* ══════ CHAT — inline in right panel ══════ */
+document.getElementById("send-btn").addEventListener("click",sendMsg);
+document.getElementById("inp").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();}});
+document.getElementById("inp").addEventListener("input",function(){this.style.height="auto";this.style.height=Math.min(this.scrollHeight,60)+"px";});
+
+function setMode(m){
+  chatMode=m;
+  ["t1","t2","t3","auto"].forEach(id=>{
+    document.getElementById(`m-${id}`)?.classList.toggle("on",id===m);
+  });
+  document.getElementById("inp").placeholder=
+    m==="t1"?"Ask using pandas (Tier 1 — instant, free)…":
+    m==="t2"?"Ask using semantic search (Tier 2 — TF-IDF)…":
+    m==="t3"?"Ask using Gemini AI (Tier 3 — LLM)…":
+    "Ask anything about the selected dashboard…";
+}
+
+async function sendMsg(){
+  const inp=document.getElementById("inp");
+  const btn=document.getElementById("send-btn");
+  const q  =inp.value.trim();
+  if(!q)return;
+  if(!activeId){addMsg("error","Please select a dashboard first.");return;}
+
+  addMsg("user",q);
+  chatHistory.push({role:"user",content:q});
+  inp.value="";inp.style.height="auto";btn.disabled=true;
+  document.getElementById("chips").style.display="none";
+  const tid=showTyping();
+
+  try{
+    const use_llm = chatMode==="t3"||chatMode==="auto";
+    const res=await fetch(`${API}/intelligence/query`,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({source_id:activeId,question:q,use_llm})
+    });
+    removeTyping(tid);
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.detail||`HTTP ${res.status}`);}
+    const data=await res.json();
+
+    const tierMap={"DIRECT":"T1","SEMANTIC":"T2","LLM":"T3","FALLBACK":"T0"};
+    const tb=document.getElementById("tier-badge");
+    const tl=data.tier_label||"FALLBACK";
+    tb.className=`tier-badge ${tierMap[tl]||"T0"}`;
+    tb.textContent=`Tier ${data.tier} · ${tl}`;
+    document.getElementById("tier-latency").textContent=`${data.latency_ms}ms · conf=${data.confidence?.toFixed(2)}`;
+
+    const reply=data.reply||"";
+    chatHistory.push({role:"assistant",content:reply});
+    addMsgWithAttribution(reply, data);
+    if(data.chart) renderChatChart(data.chart);
+  }catch(err){
+    removeTyping(tid);
+    const msg=err.message.includes("fetch")
+      ?`⚠️ Backend offline. Start: <span style="font-family:var(--mono);font-size:10px">uvicorn backend.main:app --port 8000</span>`
+      :`⚠️ ${esc(err.message)}`;
+    addMsg("error",msg);
+  }
+  btn.disabled=false;
+  document.getElementById("inp").focus();
+}
+
+function addMsg(type,html){
+  const box=document.getElementById("msgs"),w=document.createElement("div");
+  w.className="mwrap "+type;
+  const s=document.createElement("div");s.className="msender";
+  s.textContent=type==="user"?"You":"Intelligence Engine";
+  const d=document.createElement("div");d.className="cmsg "+type;d.innerHTML=html;
+  w.appendChild(s);w.appendChild(d);box.appendChild(w);box.scrollTop=box.scrollHeight;
+}
+
+function addMsgWithAttribution(reply,data){
+  const box=document.getElementById("msgs"),w=document.createElement("div");
+  w.className="mwrap ai";
+  const s=document.createElement("div");s.className="msender";s.textContent="Intelligence Engine";
+  const d=document.createElement("div");d.className="cmsg ai";d.innerHTML=reply;
+  const src=document.createElement("div");src.className="msource";
+  src.innerHTML=`<span class="msource-dot"></span><span>Tier ${data.tier} · ${data.tier_label} · ${data.model_used||""}</span>${data.data_source?` · <span>${esc(data.data_source)}</span>`:""}`;
+  w.appendChild(s);w.appendChild(d);w.appendChild(src);box.appendChild(w);box.scrollTop=box.scrollHeight;
+}
+
+function renderChatChart(chart){
+  const box=document.getElementById("msgs"),w=document.createElement("div");
+  w.className="mwrap ai";
+  const s=document.createElement("div");s.className="msender";s.textContent="Intelligence Engine";
+  const cc=document.createElement("div");cc.className="chat-chart";
+  const id="cc-"+(++chatIdx);
+  cc.innerHTML=`<div class="chat-chart-title">${esc(chart.title||"")}</div><canvas id="${id}"></canvas>`;
+  w.appendChild(s);w.appendChild(cc);box.appendChild(w);box.scrollTop=box.scrollHeight;
+  const type=chart.chart_type||"bar";
+  const COLS=["#0057A8","#C8102E","#047857","#D97706","#6D28D9"];
+  setTimeout(()=>{
+    const ctx=document.getElementById(id);if(!ctx)return;
+    if(type==="bar"||type==="line"){
+      new Chart(ctx,{type,data:{labels:chart.labels||[],datasets:(chart.datasets||[]).map((ds,i)=>({
+        label:ds.label||"",data:ds.data,backgroundColor:(ds.color||COLS[i])+"25",borderColor:ds.color||COLS[i],
+        borderWidth:2,borderRadius:type==="bar"?4:0,fill:type==="line",tension:0.4,pointRadius:type==="line"?4:0,
+      }))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:(chart.datasets||[]).length>1,position:"bottom",labels:{font:{size:9},boxWidth:8}}},
+        scales:{y:{beginAtZero:true,ticks:{font:{size:9},color:"#6B7280"},grid:{color:"#F3F4F6"},border:{display:false}},
+                x:{ticks:{font:{size:9},color:"#6B7280"},grid:{display:false},border:{display:false}}},animation:{duration:500}}});
+    }else if(type==="pie"||type==="doughnut"){
+      new Chart(ctx,{type,data:{labels:chart.labels||[],datasets:[{data:chart.data||[],backgroundColor:(chart.colors||COLS).map(c=>c+"DD"),borderColor:"#fff",borderWidth:2}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{font:{size:9},boxWidth:8}}},animation:{duration:500}}});
+    }
+  },30);
+}
+
+function showTyping(){
+  const box=document.getElementById("msgs"),w=document.createElement("div");
+  const tid="typ"+Date.now();w.id=tid;w.className="mwrap ai";
+  const s=document.createElement("div");s.className="msender";s.textContent="Intelligence Engine";
+  const d=document.createElement("div");d.className="cmsg ai";
+  d.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
+  w.appendChild(s);w.appendChild(d);box.appendChild(w);box.scrollTop=box.scrollHeight;
+  return tid;
+}
+function removeTyping(tid){document.getElementById(tid)?.remove();}
+
+function renderChips(qs){
+  const el=document.getElementById("chips");
+  el.innerHTML=qs.slice(0,6).map(q=>`<button class="chip" onclick="useChip(this)">${esc(q)}</button>`).join("");
+  el.style.display=qs.length?"flex":"none";
+}
+function useChip(btn){ document.getElementById("inp").value=btn.textContent;document.getElementById("chips").style.display="none";sendMsg(); }
+
+function clearChat(){
+  chatHistory=[];document.getElementById("msgs").innerHTML="";
+  if(activeId){
+    const d=dashboards[activeId]?.schema;
+    addMsg("ai",`Chat cleared. Ask me anything about <strong>${esc(d?.source_name||activeId)}</strong>.`);
+    renderChips(dashboards[activeId]?.questions||[]);
+  }
+}
+
+function exportChat(){
+  if(!chatHistory.length)return;
+  const lines=[`Intelligence Hub Chat`,`Dashboard: ${activeId}`,`Date: ${new Date().toLocaleString("en-GB")}`,"",...chatHistory.map(m=>`[${m.role.toUpperCase()}]\n${m.content}\n`)];
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain"}));
+  a.download=`intelligence-chat-${activeId||"hub"}-${Date.now()}.txt`;a.click();
+}
+
+async function globalQuery(){
+  const q=document.getElementById("top-search").value.trim();
+  if(!q||!activeId)return;
+  document.getElementById("inp").value=q;
+  document.getElementById("top-search").value="";
+  sendMsg();
+}
+
+/* ══════ HELPERS ══════ */
+function ovCard(v,l,s,c){return `<div class="ov-card"><div class="ov-lbl">${l}</div><div class="ov-val" style="color:${c}">${v}</div><div class="ov-sub">${s}</div></div>`;}
+function capPill(on,l){return `<span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:10px;display:inline-flex;align-items:center;gap:4px;border:1px solid;${on?"background:#ECFDF5;border-color:#A7F3D0;color:#047857":"background:#F9FAFB;border-color:#E5E7EB;color:#9CA3AF"}">${on?"✓ ":"· "}${l}</span>`;}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fmtVal(v){if(v==null)return"N/A";if(typeof v!=="number")return String(v);if(v===0)return"0";if(Math.abs(v)<1)return`${(v*100).toFixed(1)}%`;if(Math.abs(v)>=1e6)return`${(v/1e6).toFixed(2)}M`;if(Math.abs(v)>=1e3)return v.toLocaleString("en-GB",{maximumFractionDigits:0});return v.toFixed(3);}
+</script>
+</body>
+</html>
